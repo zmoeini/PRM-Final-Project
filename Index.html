@@ -20,6 +20,8 @@
 
     <script type="module">
       import * as THREE from 'three';
+      import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
 
       // Grab canvas
       const canvas = document.getElementById('canvas');
@@ -44,6 +46,7 @@
       
       }
 
+
       // Simple Sun
       const Sun = new THREE.Mesh(
         new THREE.SphereGeometry(1),
@@ -65,8 +68,26 @@
 
        const planet3  = new THREE.Mesh(
         new THREE.SphereGeometry(0.1),
-        new THREE.MeshStandardMaterial({ color: 0x888888})
+        new THREE.MeshStandardMaterial({  color: 0x888888})
       );
+
+      // Orbit paths
+const orbitMaterial = new THREE.LineBasicMaterial({ color: 0x666666 });
+function createOrbit(radius) {
+  const points = [];
+  for (let i = 0; i <= 128; i++) {
+    const angle = (i / 128) * Math.PI * 2;
+    points.push(new THREE.Vector3(Math.sin(angle) * radius, Math.cos(angle) * radius, 0));
+  }
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  return new THREE.LineLoop(geometry, orbitMaterial);
+}
+
+const orbit1 = createOrbit(2);
+const orbit2 = createOrbit(4);
+const orbit3 = createOrbit(6);
+
+scene.add(orbit1, orbit2, orbit3);
 
 
 
@@ -93,6 +114,13 @@
       // Resize handling
       window.addEventListener('resize', setRendererSize);
 
+      const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; // smooth motion
+controls.dampingFactor = 0.05;
+controls.minDistance = 3;  // min zoom
+controls.maxDistance = 50; // max zoom
+
+
       // Animate
       function animate() {
         requestAnimationFrame(animate);
@@ -104,6 +132,8 @@ planet2.position.set(Math.sin(time * 0.4) * 4, Math.cos(time * 0.4) * 4, 0);
 planet3.position.set(Math.sin(time * 0.2) * 6, Math.cos(time * 0.2) * 6 , 0);
         //Sun.rotation.x += 0.005;
        // planet1.position.x +=0.005;
+       controls.update();
+
         renderer.render(scene, camera);
       }
 

@@ -1,0 +1,7 @@
+ html, body { height: 100%; margin: 0; overflow: hidden; }
+      /* The canvas will size via CSS; renderer will match its client size */
+      #canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      } 

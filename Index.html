@@ -47,22 +47,25 @@
       // Simple Sun
       const Sun = new THREE.Mesh(
         new THREE.SphereGeometry(1),
-        new THREE.MeshStandardMaterial({ color: 0x4e9fe5 })
+        new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xffaa00, emissiveIntensity: 1.5})
       );
       scene.add(Sun);
       //Planet 1 maybe mercury
       const planet1  = new THREE.Mesh(
         new THREE.SphereGeometry(0.2),
-        new THREE.MeshStandardMaterial({ color: 0x4e9fe5 })
+        new THREE.MeshStandardMaterial({ color: 0xff3300 })
       );
+      //planet2 maybe earth
+
        const planet2  = new THREE.Mesh(
         new THREE.SphereGeometry(0.3),
         new THREE.MeshStandardMaterial({ color: 0x4e9fe5 })
       );
+      //creation of planet 3
 
        const planet3  = new THREE.Mesh(
         new THREE.SphereGeometry(0.1),
-        new THREE.MeshStandardMaterial({ color: 0x4e9fe5 })
+        new THREE.MeshStandardMaterial({ color: 0x888888})
       );
 
 
@@ -76,26 +79,6 @@
       planet1.position.set(0,2  ,0);
       planet2.position.set(2,-3,-0);
       planet3.position.set(5,0,0);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -114,7 +97,13 @@
       function animate() {
         requestAnimationFrame(animate);
         Sun.rotation.y += 0.01;
+        const time = Date.now() * 0.001; // time in seconds
+
+    planet1.position.set(Math.sin(time * 0.8) * 2, Math.cos(time * 0.8) * 2, 0);
+planet2.position.set(Math.sin(time * 0.4) * 4, Math.cos(time * 0.4) * 4, 0);
+planet3.position.set(Math.sin(time * 0.2) * 6, Math.cos(time * 0.2) * 6 , 0);
         //Sun.rotation.x += 0.005;
+       // planet1.position.x +=0.005;
         renderer.render(scene, camera);
       }
 

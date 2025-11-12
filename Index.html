@@ -44,12 +44,60 @@
       
       }
 
-      // Simple content
+      // Simple Sun
       const Sun = new THREE.Mesh(
         new THREE.SphereGeometry(1),
         new THREE.MeshStandardMaterial({ color: 0x4e9fe5 })
       );
       scene.add(Sun);
+      //Planet 1 maybe mercury
+      const planet1  = new THREE.Mesh(
+        new THREE.SphereGeometry(0.2),
+        new THREE.MeshStandardMaterial({ color: 0x4e9fe5 })
+      );
+       const planet2  = new THREE.Mesh(
+        new THREE.SphereGeometry(0.3),
+        new THREE.MeshStandardMaterial({ color: 0x4e9fe5 })
+      );
+
+       const planet3  = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1),
+        new THREE.MeshStandardMaterial({ color: 0x4e9fe5 })
+      );
+
+
+
+     
+     // console.log(Sun.position);
+     
+      scene.add(planet1);
+      scene.add(planet2);
+      scene.add(planet3);
+      planet1.position.set(0,2  ,0);
+      planet2.position.set(2,-3,-0);
+      planet3.position.set(5,0,0);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       const pointlight = new THREE.PointLight(0xffffff,2);
       pointlight.position.set(3,2,5);

@@ -1,11 +1,250 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js Whack-a-Mole 3D+</title>
+    <title>Whack-A-Mole</title>
 </head>
+
+<style>
+    html,
+    body {
+        height: 100%;
+        margin: 0;
+        background: black;
+        overflow: hidden;
+        font: 14px system-ui, sans-serif;
+    }
+
+    /* HUD container in top-left */
+    #ui {
+        position: fixed;
+        left: 10px;
+        top: 10px;
+        color: white;
+        background: black;
+        padding: 6px 10px;
+        border-radius: 8px;
+    }
+
+    /* small spacing for HUD items */
+    #ui span.item {
+        margin-left: 8px;
+    }
+</style>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
+}
+</script>
+
 <body>
-    
+    <!-- HUD: Timer, Stars (score), Misses, Streak (current consecutive hits), Combo (best streak) -->
+    <div id="ui">
+        ⏲️ Time remaining: <span id="timer">30.0</span>
+        <span class="item">⭐ Stars: <span id="stars">0</span></span>
+        <span class="item">❌ Misses: <span id="misses">0</span></span>
+        <span class="item">🔥 Streak: <span id="streak">0</span></span>
+        <span class="item">💥 Combo: <span id="combo">0</span></span>
+    </div>
+
+    <script type="module">
+        import * as THREE from "three";
+
+        // Minimal game state
+        let time = 30; // seconds remaining
+        let score = 0; // stars collected
+        let misses = 0; // missed clicks count
+        let streak = 0; // current consecutive hits
+        let bestCombo = 0; // highest streak achieved
+        let running = true;
+
+        // Scene setup (camera, renderer, lights)
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0d12);
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 6, 8);
+        camera.lookAt(0, 0, 0);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Resize handling
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Lights
+        const light = new THREE.HemisphereLight(0x9ecfff, 0x0b0d12, 0.9);
+        scene.add(light);
+        const dl = new THREE.DirectionalLight(0xffffff, 0.7);
+        dl.position.set(3, 6, 4);
+        scene.add(dl);
+
+        // Ground plane
+        const ground = new THREE.PlaneGeometry(10, 8);
+        const material = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+        ground.rotateX(-Math.PI / 2);
+        const groundMesh = new THREE.Mesh(ground, material);
+        scene.add(groundMesh);
+
+        // Ring (visual)
+        const ringShape = new THREE.TorusGeometry(0.7, 0.12, 12, 32);
+        const ringMaterial = new THREE.MeshStandardMaterial({ color: 0xf97316 });
+        const ring = new THREE.Mesh(ringShape, ringMaterial);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 0.02;
+        scene.add(ring);
+
+        // Mole mesh
+        const moleShape = new THREE.SphereGeometry(0.55, 16, 14);
+        const moleMaterial = new THREE.MeshStandardMaterial({ color: 0xf97316 });
+        const mole = new THREE.Mesh(moleShape, moleMaterial);
+        scene.add(mole);
+
+        let popUpTime = 900; // milliseconds. Pop up time for moles
+        let sincePopUp = 0; // time since last pop up
+
+        function popUp() {
+            // Hide mole under ground and reset popup timer and animation state
+            mole.position.y = -1;
+            mole.userData.time = 0; // reset popup time (animation counter)
+            sincePopUp = 0; // start waiting before next pop
+        }
+        popUp(); // initial hide (first pop will occur after popUpTime)
+
+        // Raycaster for mouse clicks
+        const ray = new THREE.Raycaster(); // raycaster from mouse position to 3D scene points
+        const pt = new THREE.Vector2(); // 2D point for mouse
+
+        const elementTimer = document.getElementById('timer');
+        const elementStars = document.getElementById('stars');
+        const elementMisses = document.getElementById('misses');
+        const elementStreak = document.getElementById('streak');
+        const elementCombo = document.getElementById('combo');
+
+        // Update HUD values
+        function updateUI() {
+            elementTimer.textContent = time.toFixed(1);
+            elementStars.textContent = score;
+            elementMisses.textContent = misses;
+            elementStreak.textContent = streak;
+            elementCombo.textContent = bestCombo;
+        }
+
+        const canvas = renderer.domElement;
+        function ndcFromEvent(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                y: -((e.clientY - rect.top) / rect.height) * 2 + 1
+            };
+        }
+
+        // Pointer handler: count hits and misses, update streak/combo
+        function onPointer(e) {
+            if (!running) return;
+            const ndc = ndcFromEvent(e);
+            pt.x = ndc.x;
+            pt.y = ndc.y;
+            ray.setFromCamera(pt, camera);
+            const hits = ray.intersectObject(mole, false);
+
+            // Hit when ray intersects mole AND mole is visibly up
+            if (hits.length > 0 && mole.position.y > -0.2) {
+                // Successful hit
+                score++;
+                streak++; // increment current streak
+                if (streak > bestCombo) bestCombo = streak; // update best combo
+                // hide mole and reset pop timers
+                mole.position.y = -1;
+                mole.userData.time = 0;
+                sincePopUp = 0;
+                updateUI();
+            } else {
+                // Missed click (either didn't hit mole or mole not visible)
+                misses++;
+                streak = 0; // reset current streak on miss
+                updateUI();
+            }
+        }
+
+        // attach pointer handler to the canvas so clicks register
+        renderer.domElement.addEventListener('pointerdown', onPointer, false);
+
+        // Game loop: updates timing, mole animation, and rendering
+        let last = performance.now();
+        updateUI();
+
+        // --- Animation timing parameters ---
+        const upDuration = 0.5;      // seconds taken to pop up
+        const downDuration = 0.5;    // seconds taken to go down
+        const holdDuration = 0.012;   // seconds to stay fully up (gives player time to click)
+        // The mole's visible top y offset
+        const moleTopY = 0.9;
+
+        function loop(now) {
+            requestAnimationFrame(loop);
+            const delta = Math.min((now - last) / 1000, 0.5); // seconds since last frame
+            last = now;
+
+            if (running && time > 0) {
+                time = Math.max(0, time - delta);
+                sincePopUp += delta * 1000;
+
+                // Time to start a popup cycle
+                if (sincePopUp >= popUpTime) {
+                    sincePopUp = 0;
+                    mole.userData.time = 0; // start animation (time in seconds)
+                }
+
+                // Simple pop animation state with an added hold phase
+                const userData = mole.userData;
+                // increment the animation timer in seconds
+                userData.time = (userData.time || 0) + delta * 1.0; // 1.0 -> real seconds scaled by durations
+
+                const totalCycle = upDuration + holdDuration + downDuration;
+
+                if (userData.time < upDuration) {
+                    // rising phase: smoothly interpolate from hidden (-1) to top (moleTopY)
+                    const t = userData.time / upDuration;
+                    const eased = THREE.MathUtils.smoothstep(t, 0, 1);
+                    mole.position.y = -1 + eased * moleTopY;
+                } else if (userData.time < upDuration + holdDuration) {
+                    // hold phase: keep mole fully visible for a short time so player can click
+                    mole.position.y = -1 + moleTopY;
+                } else if (userData.time < totalCycle) {
+                    // descending phase: smoothly interpolate back down
+                    const t = (userData.time - upDuration - holdDuration) / downDuration;
+                    const eased = THREE.MathUtils.smoothstep(t, 0, 1);
+                    mole.position.y = -1 + moleTopY * (1 - eased);
+                } else {
+                    // cycle finished: hide and wait before next pop
+                    mole.position.y = -1;
+                    userData.time = 0;
+                    sincePopUp = 0;
+                }
+
+                // When time runs out stop game and show final stats
+                if (time === 0) {
+                    running = false;
+                    alert(`Time's up! You scored ${score} stars.\nMisses: ${misses}\nBest Combo: ${bestCombo}\nStreak: ${streak}`);
+                }
+
+                updateUI();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        requestAnimationFrame(loop);
+    </script>
 </body>
+
 </html>

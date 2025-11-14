@@ -38,7 +38,7 @@
         ⭐<span id="score">0</span> score 
         ❌<span id="misses">0</span> misses  
         🔥<span id="streak">0</span> streak  
-        ⚡<span id="combo">0</span>x combo
+        ⚡<span id="combo">0</span> combo
     </div>
     <script type="module">
          import * as THREE from 'three';
@@ -170,6 +170,7 @@
                 time -= delta / 1000; 
                 if (time <= 0) {
                     time = 0;
+                    combo = 0;
                     running = false; // game over
                 }
             //update mole
@@ -189,8 +190,7 @@
                 //count miss if no hit in amount of time
                     if (mole.userData.t > 1500) {
                         misses++; 
-                        streak = 0; 
-                        combo = 0; 
+                        streak = 0;  
                         resetMole(); 
                         sincePopUp = 0; 
                     }
@@ -200,11 +200,10 @@
                 if (sincePopUp >= popUpTime && !moleIsUp) {
                     popUp(); 
                 }
-
-                updateUI();
             }
 
-            // Render and animate
+            // Render and animate, UI
+            updateUI();
             renderer.render(scene, camera);
             requestAnimationFrame(animate);
         }

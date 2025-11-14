@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack a Mole</title>
+</head>
+<style>
+    html,body{
+        margin:0;
+        height:100%;
+        background: black;
+        overflow: hidden;
+        font:14px system-ui;
+    }
+    #ui{
+        position:fixed;
+        left:10px;
+        top:10px;
+        color:white;
+        background: black;
+        padding: 6px 10px;
+        border-radius:8px ;
+    }
+</style>
+<script type="importmap">
+{
+   "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
+}
+</script>
+<body>
+    <div id="ui"> ⏱<span id="t">30.0</span>s. ⭐<span id="s">0</span></div>
+    <script type="module">
+         import * as THREE from 'three';
+
+        //minimal state
+        let time = 30;
+        let score = 0;
+        let running = true;
+
+        // three setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0d12);
+        const camera = new THREE.PerspectiveCamera(55,innerWidth/innerHeight, 0.1, 1000);
+        camera.position.set(0,6,8);
+        camera.lookAt(0,0,0);
+
+        const renderer = new THREE.WebGLRenderer({antialias:true});
+        renderer.setSize(innerWidth,innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        //resize event
+        addEventListener('resize', () => 
+            {
+                camera.aspect = innerWidth/innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(innerWidth,innerHeight);
+            }
+        );
+
+        //Hemisphere Light
+        const light = new THREE.HemisphereLight(0x9ecfff, 0x0b0d12, 0.9);
+        const dl = new THREE.DirectionalLight(0xffffff, 0.7);
+        dl.position.set(3,6,4);
+        scene.add(light);
+        scene.add(dl);
+
+        //GROUND
+        const groundShape = new THREE.PlaneGeometry(10,8);
+        const material = new THREE.MeshStandardMaterial({color:0x0f172a, roughness:0.9});
+        const ground = new THREE.Mesh(groundShape, material);
+        ground.rotation.x = -Math.PI/2;    
+        scene.add(ground);
+
+        //Ring
+        // .7 - ring size(outer radius  
+        // .12 - tube radius (thickness)
+        // .12 - how many slices around the tube
+        // .32 - how many segments around the ring
+        const ringShape = new THREE.TorusGeometry(0.7, 0.12, 12, 32);
+        const ringMaterial = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 });
+        const ring = new THREE.Mesh(ringShape, ringMaterial);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 0.02;
+        scene.add(ring);
+
+        //MOLE
+        const moleShape = new THREE.SphereGeometry(0.55, 16, 14);
+        const moleMaterial = new THREE.MeshStandardMaterial({color:0xf97316});
+        const mole = new THREE.Mesh(moleShape, moleMaterial);
+        mole.position.y = -0.8; //start below ground
+        scene.add(mole);
+            
+        let popUpTime = 900;
+        let sincePopUp = 0;
+        function popUp(){
+            //hide mole under ground
+            mole.position.y = -0.8;
+            mole.userData.t = 0; // reset a small timer so we can track how long it's been up.
+
+        }
+        popUp();
+
+        function animate() {
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+
+<head>
+  <meta charset="UTF-8">
+  <title>Three.js Setup</title>
+  <script type="importmap">
+    {
+        "imports":{
+            "three" : "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+        }
+    }
+  </script>
+</head>
+
+<body style="margin: 0;">
+
+
+<script type="module">
+
+import * as THREE from 'three';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/controls/OrbitControls.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 50, 100);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+addEventListener('resize', () =>{
+    camera.aspect = innerWidth/innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth,innerHeight);
+});
+
+
+
+class Body {
+  constructor(pos, color, initialVelocity, size, mass) {
+    this.color = color;
+    
+    this.velocity = initialVelocity;
+
+    this.size = size;
+    this.sphereGeometry = new THREE.SphereGeometry(size, 32, 32); 
+    this.material = new THREE.MeshStandardMaterial({color: color});
+
+    this.mass = mass;
+
+    this.mesh = new THREE.Mesh(this.sphereGeometry, this.material);
+    this.mesh.position.copy(pos);
+    scene.add(this.mesh);
+  }
+
+  getPos() {
+    return this.mesh.position;
+  }
+
+  addPos(delta) {
+    this.mesh.position.add(delta);
+  }
+
+}
+
+class Sun extends Body {
+  constructor(pos, size, mass) {
+    super(pos, 0xffff00, new THREE.Vector3(0,0,0), size, mass);
+    this.mesh.material = new THREE.MeshStandardMaterial({
+      color: 0xffff00,
+      emissive: 0xffaa00,
+      emissiveIntensity: 2
+    });
+    const sunLight = new THREE.PointLight(0xffffff, 300, 0);
+    this.mesh.add(sunLight);
+  }
+}
+
+
+class Simulation {
+    
+  constructor(g) {
+    this.g = g;
+    this.bodies = []
+  }
+
+  add(body) {
+    this.bodies.push(body);
+  }
+
+  calculateMassCenter() {
+    let sum = new THREE.Vector3(0, 0, 0);
+    let sumMass = 0;
+    for (let i = 0; i < this.bodies.length; i++) {
+        let pos = this.bodies[i].getPos();
+        let mass = this.bodies[i].mass;
+        sumMass += mass;
+        sum.add(new THREE.Vector3(pos.x * mass, pos.y * mass, pos.z * mass));
+    }
+    return new THREE.Vector3(sum.x / sumMass, sum.y / sumMass, sum.z / sumMass)
+  }
+
+  tick(dt) {
+    const massCenter = this.calculateMassCenter();
+    for (let i = 0; i < this.bodies.length; i++) {
+        let force = new THREE.Vector3(0, 0, 0);
+        let currentBody = this.bodies[i];
+        for (let j = 0; j < this.bodies.length; j++) {
+            let pullingBody = this.bodies[j];
+            let delta = pullingBody.getPos().clone().sub(currentBody.getPos());
+            let distance = delta.length();
+            if (distance == 0) {
+                continue;
+            }
+            let multiplier = this.g * currentBody.mass * pullingBody.mass / distance / distance / distance; 
+            force.add(delta.multiplyScalar(multiplier));
+        }
+        currentBody.velocity.add(force.multiplyScalar(dt / currentBody.mass));
+        currentBody.addPos(currentBody.velocity.clone().multiplyScalar(dt));
+    }
+  }
+
+}
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.minDistance = 50;
+controls.maxDistance = 500;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.06));
+
+let simulation = new Simulation(1);
+
+let sun = new Sun(new THREE.Vector3(0, 0, 0), 8, 1000);
+simulation.add(sun);
+
+
+function addGrid(size, divisions, axesColor, linesColor, opacity) {
+    const grid = new THREE.GridHelper(size, divisions, axesColor, linesColor);
+    grid.position.y = -sun.size;
+    grid.material.transparent = true;
+    grid.material.opacity = opacity
+    scene.add(grid);
+}
+addGrid(200, 20, 0xff00ff, 0xffff00, 0.2);
+
+
+for (let i = 0; i < 8; i++) {
+    
+    let distance = 20 + i * 15;
+
+    let position = new THREE.Vector3(Math.random() - 0.5, (Math.random() - 0.5) / 20, Math.random() - 0.5);
+    position.normalize();
+    position.multiplyScalar(distance);
+
+    let r = position.clone();
+    let axis = new THREE.Vector3(0, 1, 0);
+    let direction = new THREE.Vector3().crossVectors(r, axis).normalize();
+    let speed = 30 / Math.sqrt(distance);
+    let velocity = direction.multiplyScalar(speed);
+
+    let t = Math.random();
+    let red = 0.3;
+    let green = Math.random();
+    let blue = Math.random();
+    let color = new THREE.Color(red, green, blue);
+
+    let planet = new Body(position, color, velocity, 2, 2);
+
+    simulation.add(planet);
+}
+
+let clock = performance.now();
+function loop(now) {
+  requestAnimationFrame(loop);
+  // If less than 10 fps, the game slows down rather than simulating with high delay
+  const dt = Math.min((now - clock) / 1000, 0.1);
+  clock = now;
+
+  // Do 50 simulation steps every tick
+  for (let i = 0; i < 50; i++) {
+    simulation.tick(dt * 0.1);
+  }
+
+  controls.update();
+
+  renderer.render(scene, camera);
+}
+
+loop(0);
+</script>
+</body>
+</html>

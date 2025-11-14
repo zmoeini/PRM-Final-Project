@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title> SOLAR SYSTEM</title>
+    <style>
+        /*Remove elements to create a full screen canvas Emmanuel Leon 2025-11-14 */
+      body { margin: 0; overflow: hidden; } 
+    </style>
+
+    <!--THIS IS ESSENTIAL TO MAKE THE CODE WORK (IMPORTING THREEJS AND OBRITS CONTROLS FROM CDN) THE CODE WONT WORK IF YOU DONT IMPORT THESE LIBRARIES Emmanuel Leon 2025-11-12-->
+    <script type="importmap">
+      {
+        
+        "imports": {
+          "three": "https://unpkg.com/three@0.168.0/build/three.module.js",
+          "OrbitControls": "https://unpkg.com/three@0.168.0/examples/jsm/controls/OrbitControls.js"
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <script type="module">
+      // WEEK 1 - SETTING THE SCENE
+
+        //IMPORTING LIBRARIES Emmanuel Leon 2025-11-14
+      import * as THREE from 'three';
+      import { OrbitControls } from 'OrbitControls';
+
+      //  Creating the Scene - Emmanuel Leon 2025-11-14
+      const scene = new THREE.Scene();
+
+      // Camera
+      //Setting up the camera 
+      // FOV = 60 grados 
+      // Aspect ratio = tamaño de pantalla
+      // Near/Far = qué tan cerca/lejos se renderiza
+
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 20, 40);  // Adjusting the camera to show all the system THE POSITION SHOULD BE FAR ENOUGH TO SEE ALL THE SOLAR SYSTE WITH GOOD PERSPECTIVE EMMANUEL LEON 2025-11-14
+
+      // Renderer  THIS SECTION RENDERS THE WHOLE CANVAS DRAWING THE ELEMENTS  Emmanuel Leon 2025-11-14
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement); // YOU SHOULD APPEND THE DOCUMENT TO THE DOM
+
+    
+    </script>
+  </body>
+</html>

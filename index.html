@@ -155,35 +155,36 @@
 
 //Main loop
         let last = performance.now();
+
         function animate(t) {
             requestAnimationFrame(animate);
             const dt = Math.min((t-last)/1000, 0.05); 
             last = t;
 
-            // is game still running?
-            if (running) {
-                //update game timer
-                time -= dt;
-                if (time <= 0) {
+            if (running) {  //is game still running?
+                time -= dt; //let timer run
+
+                if (time == 0) { //game over case
                     time = 0;
                     combo = 0;
-                    running = false; //game over
+                    running = false; 
+                    alert("Game Over!");
                 }
-            //update mole
-                sincePopUp += dt * 1000; // add time to pop up counter
-                //if mole is up, animate rising and check if it should go back down 
+
+                //update mole timing
+                sincePopUp += dt * 1000; 
+
+                //animate mole up
                 if (moleIsUp) {
-                    mole.userData.t += dt * 1000; //add to how long mole has been up
-                    
-                    //Animate mole up (first 300ms)
-                    if (mole.userData.t < 300) {
-                        //move up smoothly
-                        mole.position.y = -0.8 + (1.3 * (mole.userData.t / 300));
-                    } else {
-                        //keep at top position until popUpTime
+                    mole.userData.t += dt * 1000; //how long mole has been up
+                    if (mole.userData.t < 300) { //until 300ms passed
+                        mole.position.y = -0.8 + (1.3 * (mole.userData.t / 300)); //move up smoothly
+                    } 
+                    else {
+                        //keep at top until popUpTime
                         mole.position.y = 0.5;
                     }
-                //count miss if no hit after popUpTime
+                    //count miss if no hit was registered after popUpTime
                     if (mole.userData.t > popUpTime) {
                         misses++; 
                         streak = 0;  
@@ -191,19 +192,17 @@
                         sincePopUp = 0; 
                     }
                 }
-
-                //if enough time passed and mole is down, pop up again
+                //repeat Mole pop up when ready
                 if (sincePopUp >= popUpTime && !moleIsUp) {
                     popUp(); 
                 }
             }
 
-            // Render and animate, UI
+            // Render, UI
             updateUI();
             renderer.render(scene, camera);
         }
-        
-        // Start the animation loop
+
         animate(performance.now());
     </script>
 </body>

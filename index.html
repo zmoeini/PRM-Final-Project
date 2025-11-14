@@ -12,6 +12,7 @@
         background: black;
         overflow: hidden;
         font:14px system-ui;
+        cursor: crosshair; /* makes cursor look like a crosshair for aiming */
     }
     #ui{
         position:fixed;
@@ -30,29 +31,38 @@
     }
 }
 </script>
+
 <body>
-    <div id="ui"> ⏱<span id="t">30.0</span>s. ⭐<span id="s">0</span></div>
+     <div id="ui"> 
+        ⏱<span id="time">30.0</span>time
+        ⭐<span id="score">0</span> score 
+        ❌<span id="misses">0</span> misses  
+        🔥<span id="streak">0</span> streak  
+        ⚡<span id="combo">0</span>x combo
+    </div>
     <script type="module">
          import * as THREE from 'three';
-
         //minimal state
         let time = 30;
         let score = 0;
         let running = true;
+        let misses = 0; 
+        let streak = 0; 
+        let combo = 0;
 
-        // three setup
+//Scene setup
+        //three setup
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0b0d12);
         const camera = new THREE.PerspectiveCamera(55,innerWidth/innerHeight, 0.1, 1000);
-        camera.position.set(0,6,8);
-        camera.lookAt(0,0,0);
-
+        camera.position.set(0,6,8); // Cam little above and behind
+        camera.lookAt(0,0,0); //look at center
+        //renderer
         const renderer = new THREE.WebGLRenderer({antialias:true});
         renderer.setSize(innerWidth,innerHeight);
         document.body.appendChild(renderer.domElement);
-
         //resize event
-        addEventListener('resize', () => 
+        window.addEventListener('resize', () => 
             {
                 camera.aspect = innerWidth/innerHeight;
                 camera.updateProjectionMatrix();
@@ -62,51 +72,144 @@
 
         //Hemisphere Light
         const light = new THREE.HemisphereLight(0x9ecfff, 0x0b0d12, 0.9);
-        const dl = new THREE.DirectionalLight(0xffffff, 0.7);
+        const dl = new THREE.DirectionalLight(0xffffff, 0.7); //directional light 
         dl.position.set(3,6,4);
         scene.add(light);
         scene.add(dl);
-
         //GROUND
         const groundShape = new THREE.PlaneGeometry(10,8);
         const material = new THREE.MeshStandardMaterial({color:0x0f172a, roughness:0.9});
         const ground = new THREE.Mesh(groundShape, material);
-        ground.rotation.x = -Math.PI/2;    
+        ground.rotation.x = -Math.PI/2; //make flat
         scene.add(ground);
-
         //Ring
-        // .7 - ring size(outer radius  
-        // .12 - tube radius (thickness)
-        // .12 - how many slices around the tube
-        // .32 - how many segments around the ring
         const ringShape = new THREE.TorusGeometry(0.7, 0.12, 12, 32);
         const ringMaterial = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.3 });
         const ring = new THREE.Mesh(ringShape, ringMaterial);
-        ring.rotation.x = -Math.PI / 2;
-        ring.position.y = 0.02;
+        ring.rotation.x = -Math.PI / 2; //make flat
+        ring.position.y = 0.02; //little above ground
         scene.add(ring);
-
         //MOLE
         const moleShape = new THREE.SphereGeometry(0.55, 16, 14);
         const moleMaterial = new THREE.MeshStandardMaterial({color:0xf97316});
         const mole = new THREE.Mesh(moleShape, moleMaterial);
         mole.position.y = -0.8; //start below ground
         scene.add(mole);
-            
+
+
+        //pop up setup
         let popUpTime = 900;
         let sincePopUp = 0;
+        let moleIsUp = false;
+        let lastTime = Date.now(); 
+
+//usable functions
         function popUp(){
-            //hide mole under ground
-            mole.position.y = -0.8;
+            mole.position.y = -0.8; //start underground
             mole.userData.t = 0; // reset a small timer so we can track how long it's been up.
-
+            moleIsUp = true;
+            sincePopUp = 0; //reset timer for next pop up
         }
-        popUp();
+        popUp(); //initial hide call
 
+        //Loop UI
+        function updateUI() {
+            document.getElementById('time').textContent = time.toFixed(1); // (1 decimal)
+            document.getElementById('score').textContent = score;
+            document.getElementById('misses').textContent = misses;
+            document.getElementById('streak').textContent = streak; 
+            document.getElementById('combo').textContent = combo;
+        }
+        // reset mole 
+        function resetMole() {
+            mole.position.y = -0.8; 
+            moleIsUp = false; // mark that mole is down
+        }
+
+        // when Mole is hit
+        function hitMole() {
+            if (!moleIsUp || mole.position.y < 0.3) {
+                return; // don't count if mole is underground or still rising
+            }
+            score ++;
+            streak++; 
+            if (streak > combo) combo = streak;   
+        //reset
+            resetMole();   
+            sincePopUp = 0; 
+        }
+
+
+// Pointer down event
+         //Raycasting setup
+        const ray = new THREE.Raycaster();
+        const mouse = new THREE.Vector2(); // 2D vector for mouse
+
+        window.addEventListener("pointerdown", (e) => {
+            if (!running) return;
+
+            mouse.x = (e.clientX / innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+
+            ray.setFromCamera(mouse, camera); 
+            const hit = ray.intersectObject(mole);
+            if (hit.length > 0) { 
+                hitMole(); // call hit
+            }});
+
+//Main loop
         function animate() {
+            //how much time passed since last frame
+            const now = Date.now();
+            const delta = now - lastTime; 
+            lastTime = now;
+
+            // is game still running?
+            if (running) {
+                //update game timer
+                time -= delta / 1000; 
+                if (time <= 0) {
+                    time = 0;
+                    running = false; // game over
+                }
+            //update mole
+                sincePopUp += delta; // add time to pop up counter
+                //if mole is up, animate rising and check if it should go back down 
+                if (moleIsUp) {
+                    mole.userData.t += delta; //add to how long mole has been up
+                    
+                    //Animate mole up (first 300ms)
+                    if (mole.userData.t < 300) {
+                        // Move up smoothly from -0.8 to 0.5 over 300ms
+                        mole.position.y = -0.8 + (1.3 * (mole.userData.t / 300));
+                    } else {
+                        // Keep mole at top position
+                        mole.position.y = 0.5;
+                    }
+                //count miss if no hit in amount of time
+                    if (mole.userData.t > 1500) {
+                        misses++; 
+                        streak = 0; 
+                        combo = 0; 
+                        resetMole(); 
+                        sincePopUp = 0; 
+                    }
+                }
+
+                //if enough time passed and mole is down, pop up again
+                if (sincePopUp >= popUpTime && !moleIsUp) {
+                    popUp(); 
+                }
+
+                updateUI();
+            }
+
+            // Render and animate
             renderer.render(scene, camera);
             requestAnimationFrame(animate);
         }
+        
+        // Start the animation loop
         animate();
     </script>
 </body>

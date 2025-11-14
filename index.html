@@ -5,7 +5,8 @@
     <title> SOLAR SYSTEM</title>
     <style>
         /*Remove elements to create a full screen canvas Emmanuel Leon 2025-11-14 */
-      body { margin: 0; overflow: hidden; } 
+      body { margin: 0; overflow: hidden;background-color: blue; } 
+  
     </style>
 
     <!--THIS IS ESSENTIAL TO MAKE THE CODE WORK (IMPORTING THREEJS AND OBRITS CONTROLS FROM CDN) THE CODE WONT WORK IF YOU DONT IMPORT THESE LIBRARIES Emmanuel Leon 2025-11-12-->
@@ -37,7 +38,7 @@
       // Aspect ratio = tamaño de pantalla
       // Near/Far = qué tan cerca/lejos se renderiza
 
-      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.set(0, 20, 40);  // Adjusting the camera to show all the system THE POSITION SHOULD BE FAR ENOUGH TO SEE ALL THE SOLAR SYSTE WITH GOOD PERSPECTIVE EMMANUEL LEON 2025-11-14
 
       // Renderer  THIS SECTION RENDERS THE WHOLE CANVAS DRAWING THE ELEMENTS  Emmanuel Leon 2025-11-14

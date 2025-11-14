@@ -2,65 +2,132 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title> Week 1, Basic Three.js Setup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreeJS Planets</title>
+
     <style>
-        body { margin: 0; }
-        canvas { display: block; }
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: black;
+            overflow: hidden;
+            font: 14px system-ui;
+            color: white;
+        }
+        #info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.6);
+        }
     </style>
-</head>
-<body>
 
- <script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.168.0/build/three.module.js"
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
     }
-  }
-  </script>
+    </script>
+</head>
 
-<script type="module">
-import * as THREE from 'three';
+<body>
+    <div id="info">Click a planet</div>
 
-let scene, camera, renderer;
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-scene = new THREE.Scene(); //set my scene
+        const scene = new THREE.Scene();
 
-camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000); //set my camera
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            innerWidth / innerHeight,
+            0.1,
+            100
+        );
+        camera.position.z = 5;
 
-camera.position.set(0,2,5); //move camera back so we can view the scene
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(innerWidth, innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-renderer = new THREE.WebGLRenderer(); //set my renderer
-renderer.setSize(window.innerWidth, window.innerHeight); //set size of renderer
+        const controls = new OrbitControls(camera, renderer.domElement);
 
-renderer.setClearColor(0x000000);
+        // sun
+        const sunGeo = new THREE.SphereGeometry(1.2, 32, 32);
+        const sunMat = new THREE.MeshBasicMaterial({ color: 0xffdd55 });
+        const sun = new THREE.Mesh(sunGeo, sunMat);
+        scene.add(sun);
 
-document.body.appendChild(renderer.domElement); //add renderer to html document
+        // earth group (earth + moon)
+        const earthGroup = new THREE.Group();
+        scene.add(earthGroup);
 
-// Sun 
-const sunGeo = new THREE.SphereGeometry(1, 32, 32);
-const sunMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-const sun = new THREE.Mesh(sunGeo, sunMat);
-sun.position.set(0, 3, 0);
-scene.add(sun);
+        // earth
+        const earthGeo = new THREE.SphereGeometry(0.5, 32, 32);
+        const earthMat = new THREE.MeshStandardMaterial({ color: 0x2266ff });
+        const earth = new THREE.Mesh(earthGeo, earthMat);
 
-// Sunlight
-const sunLight = new THREE.DirectionalLight(0xffffff, 2);
-sunLight.position.set(0, 3, 2);
-scene.add(sunLight);
+        earthGroup.add(earth);
 
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
+        // moon
+        const moonGeo = new THREE.SphereGeometry(0.2, 32, 32);
+        const moonMat = new THREE.MeshStandardMaterial({ color: 0xbbbbbb });
+        const moon = new THREE.Mesh(moonGeo, moonMat);
+        moon.position.x = 0.4;           /* FIX: keep only the orbital radius */
+        earth.add(moon);
 
-function animate() {
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(3, 3, 3);
+        scene.add(light);
+
+        // Click detection
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+
+        addEventListener('click', (event) => {
+
+            pointer.x = (event.clientX / innerWidth) * 2 - 1;
+            pointer.y = -(event.clientY / innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(pointer, camera);
+
+            const hits = raycaster.intersectObjects([sun, earth, moon]);
+            if (!hits.length) return;
+
+            const hit = hits[0].object;
+
+            let name =
+                hit === sun   ? 'Sun'   :
+                hit === earth ? 'Earth' :
+                hit === moon  ? 'Moon'  :
+                'Unknown';
+
+            document.getElementById('info').innerText = "You Clicked: " + name;
+        });
+
+        function animate() {
     requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-}
 
-animate();
-</script>
+    const t = Date.now() * 0.001;
+
+    // Earth orbits Sun by moving the GROUP
+    earthGroup.position.x = 3 * Math.cos(t);
+    earthGroup.position.z = 3 * Math.sin(t);
+
+    // Moon orbits Earth in LOCAL space (farther radius)
+    moon.position.x = 1.2 * Math.cos(t * 4);
+    moon.position.z = 1.2 * Math.sin(t * 4);
+
+    controls.update();
+    renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
 </body>
 </html>
-

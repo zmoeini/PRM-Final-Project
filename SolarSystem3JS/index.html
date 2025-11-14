@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar System 3JS</title>
+</head>
+<style>
+    body{
+        margin:0;
+        height:100%;
+        background: black;
+        overflow: hidden;
+        font:14px system-ui;
+    }
+    #ui{
+        position:fixed;
+        left:10px;
+        top:10px;
+        color:white;
+        background: black;
+        padding: 6px 10px;
+        border-radius:8px ;
+    }
+     #info {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+    }
+
+</style>
+<script type="importmap">
+    {
+        "imports":
+            {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+    }
+</script>
+<body>
+     <div id="info">Click a celestial body to learn more!</div>
+
+     <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/controls/OrbitControls.js';
+
+
+        // minimal state 
+        let time = 30;
+        let score = 0;
+        let running = true;
+
+        // ---- three---- setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0d12);
+        const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 100);
+        camera.position.set(0,6,8);
+        camera.lookAt(0,0,0);
+
+        const renderer = new THREE.WebGLRenderer({antialias:true});
+        renderer.setSize(innerWidth, innerHeight);
+        // where we should show the render in html in which element --- add to body 
+        document.body.appendChild(renderer.domElement);
+        // resize ---Event 
+        addEventListener('resize',() =>
+            {
+                camera.aspect= innerWidth/innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(innerWidth, innerHeight);
+            }
+        );
+
+        // HemisphereLight 
+        const light = new THREE.HemisphereLight(0x9ecfff,0x0b0d12,0.9);
+        scene.add(light);
+        const dl = new THREE.DirectionalLight(0xffffff,0.7);
+        dl.position.set(3,6,4);
+        scene.add(dl);
+
+        //Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+
+        //Raycast + pointer
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2(); //mouse pos
+
+        //Our three objects
+        const sun = new THREE.Mesh (
+        new THREE.SphereGeometry(0.8), new THREE.MeshBasicMaterial({color: 0xFFDA21}));
+        scene.add(sun); 
+    
+        
+        const venus = new THREE.Mesh (
+        new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({color: 0xDBB48A}));
+        venus.position.x = 3;
+        //distance from the sun /\
+        scene.add(venus);
+
+        const earth = new THREE.Mesh (
+        new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({color: 0x4592B0}));
+        earth.position.x = 5;
+        //distance from the sun /\
+        scene.add(earth);
+
+        const moon = new THREE.Mesh (
+        new THREE.SphereGeometry(0.1),
+        new THREE.MeshBasicMaterial({ color: 0xEDEDED }));
+        moon.position.x = 5.4;
+        scene.add(moon);
+
+        const mars = new THREE.Mesh (
+        new THREE.SphereGeometry(0.2), new THREE.MeshBasicMaterial({color: 0xA12C02}));
+        mars.position.x = 6;
+        //distance from the sun /\
+        scene.add(mars);
+
+        //click on celestial object
+        addEventListener('pointerdown', (event)=>
+    {
+         pointer.x = (event.clientX / innerWidth)*2 -1;
+         pointer.y = -(event.clientY / innerHeight)*2 + 1;
+         raycaster.setFromCamera(pointer, camera);
+
+         const hit = raycaster.intersectObjects([sun,venus,earth,mars,moon])[0];
+
+            if (hit) document.getElementById('info').innerText = "You viewed: " + 
+                (hit.object === sun ? "the Sun" :
+                hit.object === venus ? "Venus" :
+                hit.object === earth ? "Earth" :
+                hit.object === mars ? "Mars" :
+                "the Moon");
+            
+        });
+
+        //Anims
+        function loop(){
+            requestAnimationFrame(loop);
+
+            venus.position.x= 2 * Math.cos(Date.now()*0.001);
+            venus.position.z = 2 * Math.sin(Date.now() * 0.001);
+
+            earth.position.x= 4 * Math.cos(Date.now()*0.001);
+            earth.position.z = 4 * Math.sin(Date.now() * 0.001);
+            moon.position.x = earth.position.x + 0.4 * Math.cos (Date.now() * 0.005);
+            moon.position.z = earth.position.z + 0.4 * Math.sin (Date.now() * 0.005);
+
+            mars.position.x= 6 * Math.cos(Date.now()*0.001);
+            mars.position.z = 6 * Math.sin(Date.now() * 0.001);
+
+            //update the controls
+            controls.update();
+            //render view
+            renderer.render(scene, camera);
+        }
+
+        loop(); //call funct
+
+
+        
+        
+        </script>
+</body>
+</html>

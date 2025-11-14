@@ -57,35 +57,66 @@
 
         const controls = new OrbitControls(camera, renderer.domElement);
 
-        // sun
-        const sunGeo = new THREE.SphereGeometry(1.2, 32, 32);
-        const sunMat = new THREE.MeshBasicMaterial({ color: 0xffdd55 });
-        const sun = new THREE.Mesh(sunGeo, sunMat);
+        // ----------------------------
+        // SUN
+        // ----------------------------
+        const sun = new THREE.Mesh(
+            new THREE.SphereGeometry(1.2, 32, 32),
+            new THREE.MeshBasicMaterial({ color: 0xffdd55 })
+        );
         scene.add(sun);
 
-        // earth group (earth + moon)
+        // ----------------------------
+        // VENUS (BETWEEN SUN AND EARTH)
+        // ----------------------------
+        const venusGroup = new THREE.Group();
+        scene.add(venusGroup);
+
+        const venus = new THREE.Mesh(
+            new THREE.SphereGeometry(0.45, 32, 32),
+            new THREE.MeshStandardMaterial({ color: 0xffa500 }) // orange
+        );
+        venusGroup.add(venus);
+
+        // ----------------------------
+        // EARTH + MOON
+        // ----------------------------
         const earthGroup = new THREE.Group();
         scene.add(earthGroup);
 
-        // earth
-        const earthGeo = new THREE.SphereGeometry(0.5, 32, 32);
-        const earthMat = new THREE.MeshStandardMaterial({ color: 0x2266ff });
-        const earth = new THREE.Mesh(earthGeo, earthMat);
-
+        const earth = new THREE.Mesh(
+            new THREE.SphereGeometry(0.5, 32, 32),
+            new THREE.MeshStandardMaterial({ color: 0x2266ff })
+        );
         earthGroup.add(earth);
 
-        // moon
-        const moonGeo = new THREE.SphereGeometry(0.2, 32, 32);
-        const moonMat = new THREE.MeshStandardMaterial({ color: 0xbbbbbb });
-        const moon = new THREE.Mesh(moonGeo, moonMat);
-        moon.position.x = 0.4;           /* FIX: keep only the orbital radius */
+        const moon = new THREE.Mesh(
+            new THREE.SphereGeometry(0.2, 32, 32),
+            new THREE.MeshStandardMaterial({ color: 0xbbbbbb })
+        );
+        moon.position.x = 1.2;
         earth.add(moon);
 
+        // ----------------------------
+        // MARS (AFTER EARTH)
+        // ----------------------------
+        const marsGroup = new THREE.Group();
+        scene.add(marsGroup);
+
+        const mars = new THREE.Mesh(
+            new THREE.SphereGeometry(0.45, 32, 32),
+            new THREE.MeshStandardMaterial({ color: 0xff5533 }) // red
+        );
+        marsGroup.add(mars);
+
+        // LIGHT
         const light = new THREE.DirectionalLight(0xffffff, 1);
         light.position.set(3, 3, 3);
         scene.add(light);
 
-        // Click detection
+        // ----------------------------
+        // CLICK DETECTION
+        // ----------------------------
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
 
@@ -96,35 +127,49 @@
 
             raycaster.setFromCamera(pointer, camera);
 
-            const hits = raycaster.intersectObjects([sun, earth, moon]);
+            const hits = raycaster.intersectObjects([sun, venus, earth, moon, mars]);
             if (!hits.length) return;
 
             const hit = hits[0].object;
 
             let name =
                 hit === sun   ? 'Sun'   :
+                hit === venus ? 'Venus' :
                 hit === earth ? 'Earth' :
                 hit === moon  ? 'Moon'  :
+                hit === mars  ? 'Mars'  :
                 'Unknown';
 
             document.getElementById('info').innerText = "You Clicked: " + name;
         });
 
+
+        // ----------------------------
+        // ANIMATION
+        // ----------------------------
         function animate() {
-    requestAnimationFrame(animate);
+            requestAnimationFrame(animate);
 
-    const t = Date.now() * 0.001;
+            const t = Date.now() * 0.001;
 
-    // Earth orbits Sun by moving the GROUP
-    earthGroup.position.x = 3 * Math.cos(t);
-    earthGroup.position.z = 3 * Math.sin(t);
+            // Venus orbit (small radius, faster)
+            venusGroup.position.x = 2 * Math.cos(t * 1.8);
+            venusGroup.position.z = 2 * Math.sin(t * 1.8);
 
-    // Moon orbits Earth in LOCAL space (farther radius)
-    moon.position.x = 1.2 * Math.cos(t * 4);
-    moon.position.z = 1.2 * Math.sin(t * 4);
+            // Earth orbit
+            earthGroup.position.x = 3 * Math.cos(t * 1);
+            earthGroup.position.z = 3 * Math.sin(t * 1);
 
-    controls.update();
-    renderer.render(scene, camera);
+            // Moon orbit around Earth
+            moon.position.x = 1.2 * Math.cos(t * 4);
+            moon.position.z = 1.2 * Math.sin(t * 4);
+
+            // Mars orbit (larger radius, slower)
+            marsGroup.position.x = 5 * Math.cos(t * 0.6);
+            marsGroup.position.z = 5 * Math.sin(t * 0.6);
+
+            controls.update();
+            renderer.render(scene, camera);
         }
 
         animate();

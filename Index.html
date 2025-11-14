@@ -23,7 +23,7 @@
       import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
 
-      // Grab canvas
+      //  canvas
       const canvas = document.getElementById('canvas');
 
       // Scene
@@ -47,7 +47,7 @@
       }
 
 
-      // Simple Sun
+      //  Sun
       const Sun = new THREE.Mesh(
         new THREE.SphereGeometry(1),
         new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xffaa00, emissiveIntensity: 1.5})
@@ -64,7 +64,7 @@
         new THREE.SphereGeometry(0.3),
         new THREE.MeshStandardMaterial({ color: 0x4e9fe5 })
       );
-      //creation of planet 3
+      // planet 3
 
        const planet3  = new THREE.Mesh(
         new THREE.SphereGeometry(0.1),
@@ -97,10 +97,10 @@
       window.addEventListener('resize', setRendererSize);
 
       const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; // smooth motion
-controls.dampingFactor = 0.05;
-controls.minDistance = 3;  // min zoom
-controls.maxDistance = 50; // max zoom
+      controls.enableDamping = true; // smooth motion
+      controls.dampingFactor = 0.05;
+      controls.minDistance = 3;  // min zoom
+      controls.maxDistance = 50; // max zoom
 
 
       // Animate

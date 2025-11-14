@@ -158,37 +158,37 @@
             }});
 
 //Main loop
-        function animate() {
-            //how much time passed since last frame
-            const now = Date.now();
-            const delta = now - lastTime; 
-            lastTime = now;
+        let last = performance.now();
+        function animate(t) {
+            requestAnimationFrame(animate);
+            const dt = Math.min((t-last)/1000, 0.05); 
+            last = t;
 
             // is game still running?
             if (running) {
                 //update game timer
-                time -= delta / 1000; 
+                time -= dt;
                 if (time <= 0) {
                     time = 0;
                     combo = 0;
-                    running = false; // game over
+                    running = false; //game over
                 }
             //update mole
-                sincePopUp += delta; // add time to pop up counter
+                sincePopUp += dt * 1000; // add time to pop up counter
                 //if mole is up, animate rising and check if it should go back down 
                 if (moleIsUp) {
-                    mole.userData.t += delta; //add to how long mole has been up
+                    mole.userData.t += dt * 1000; //add to how long mole has been up
                     
                     //Animate mole up (first 300ms)
                     if (mole.userData.t < 300) {
                         // Move up smoothly from -0.8 to 0.5 over 300ms
                         mole.position.y = -0.8 + (1.3 * (mole.userData.t / 300));
                     } else {
-                        // Keep mole at top position
+                        // Keep mole at top position after rising is finished
                         mole.position.y = 0.5;
                     }
-                //count miss if no hit in amount of time
-                    if (mole.userData.t > 1500) {
+                //count miss if no hit after popUpTime
+                    if (mole.userData.t > popUpTime) {
                         misses++; 
                         streak = 0;  
                         resetMole(); 
@@ -205,11 +205,10 @@
             // Render and animate, UI
             updateUI();
             renderer.render(scene, camera);
-            requestAnimationFrame(animate);
         }
         
         // Start the animation loop
-        animate();
+        animate(performance.now());
     </script>
 </body>
 </html>

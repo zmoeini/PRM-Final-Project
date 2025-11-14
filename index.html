@@ -74,9 +74,9 @@ class Sun extends Body {
     this.mesh.material = new THREE.MeshStandardMaterial({
       color: 0xffff00,
       emissive: 0xffaa00,
-      emissiveIntensity: 2
+      emissiveIntensity: 10
     });
-    const sunLight = new THREE.PointLight(0xffffff, 300, 0);
+    const sunLight = new THREE.PointLight(0xffffff, 3000, 0);
     this.mesh.add(sunLight);
   }
 }
@@ -166,9 +166,9 @@ for (let i = 0; i < 8; i++) {
     let velocity = direction.multiplyScalar(speed);
 
     let t = Math.random();
-    let red = 0.3;
-    let green = Math.random();
-    let blue = Math.random();
+    let red = 0.5 + Math.random() * 0.3;
+    let green = Math.random() * 0.7 + 0.3;
+    let blue = Math.random() * 0.8 + 0.2;
     let color = new THREE.Color(red, green, blue);
 
     let planet = new Body(position, color, velocity, 2, 2);

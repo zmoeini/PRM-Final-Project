@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Whack-a-mole — Tiny</title>
+<style>
+    html,body{
+      margin:0;
+      height:100%;
+      background:black;
+      overflow:hidden;
+      font:14px system-ui;
+    }
+    #ui{
+      position:fixed;
+      left:10px; top:10px;
+      color:white; background:black;
+      padding:6px 10px; border-radius:8px;
+    }
+</style>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+      }
+    }
+</script>
+</head>
+<body>
+<div id="ui"> ⏱<span id="t">30.0</span>s · ⭐<span id="s">0</span></div>
+ 
+  <script type="module">
+    import * as THREE from 'three';
+ 
+    // ----- game state -----
+    let time = 30;          // seconds
+    let score = 0;
+    let running = true;
+ 
+    // ----- three.js setup -----
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b0d12);
+ 
+    const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 100);
+    camera.position.set(0, 6, 8);
+    camera.lookAt(0, 0, 0);
+ 
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.appendChild(renderer.domElement);
+ 
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+ 
+    // lights
+    scene.add(new THREE.HemisphereLight(0x9ecfff, 0x0b0d12, 0.9));
+    const dl = new THREE.DirectionalLight(0xffffff, 0.7);
+    dl.position.set(3, 6, 4);
+    scene.add(dl);
+ 
+    // ground
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(10, 8),
+      new THREE.MeshStandardMaterial({ color:0x0f172a, roughness:0.9 })
+    );
+    ground.rotation.x = -Math.PI/2;
+    scene.add(ground);
+ 
+    // ring
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.12, 12, 32),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    ring.rotation.x = -Math.PI/2;
+    ring.position.y = 0.02;
+    scene.add(ring);
+ 
+    // mole
+    const mole = new THREE.Mesh(
+      new THREE.SphereGeometry(0.55, 16, 14),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    mole.position.y = -0.8; // hidden underground
+    scene.add(mole);
+ 
+    // popup timing
+    let popUpTime = 900;     // ms between popups
+    let sincePopUp = 0;      // ms since last popup
+ 
+    function popUp() {
+      mole.position.y = -0.8;
+      mole.userData.t = 0;   // phase timer 0..1 for anim up+down
+    }
+    popUp();
+ 
+    // ----- raycasting -----
+    const ray = new THREE.Raycaster();
+    const pt = new THREE.Vector2();
+ 
+    const ElT = document.getElementById('t');
+    const ElS = document.getElementById('s');
+ 
+    function updateUI() {
+      ElT.textContent = time.toFixed(1);
+      ElS.textContent = String(score);
+    }
+ 
+    function ndcEventFormat(e)
+    {
+      const r = canvas.getBoundingClient();
+     pt.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+     pt.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+    }
+
+    function onPointer(e){
+      if(!running) return;
+ 
+      // convert to NDC (-1..+1). NOTE: y must be inverted.
+      //pt.x = (e.clientX / innerWidth) * 2 - 1;
+      //pt.y = -(e.clientY / innerHeight) * 2 + 1;
+      ndcEventFormat(e);
+      ray.setFromCamera(pt, camera);
+      const hit = ray.intersectObject(mole, false)[0];
+ 
+      if (hit) {
+        score++;
+        mole.position.y = -0.8; // knock it back down
+        updateUI();
+      }
+    }
+    addEventListener('pointerdown', onPointer, { passive:true });
+ 
+    // ----- main loop -----
+    let last = performance.now();
+    updateUI();
+ 
+    function loop(now){
+      requestAnimationFrame(loop);
+ 
+      const dt = Math.min((now - last) / 1000, 0.05); // seconds
+      last = now;
+ 
+      if (running && time > 0) {
+        // countdown
+        time = Math.max(0, time - dt);
+ 
+        // popup cadence
+        sincePopUp += dt * 1000; // ms
+        if (sincePopUp >= popUpTime) {
+          sincePopUp = 0;
+          popUp();
+        }
+ 
+        // animation (up then down in ~1s total)
+        const ud = mole.userData;
+        ud.t = (ud.t || 0) + dt * 1.8;     // 0..1 over ~0.56s (1/1.8)
+        const up = ud.t < 0.5;             // first half: going up
+        const t = up ? (ud.t / 0.5)        // normalize 0..1
+                     : ((ud.t - 0.5) / 0.5);
+ 
+        // smooth up to 0.9, then smooth down from 0.9
+        const eased = THREE.MathUtils.smoothstep(t, 0, 1);
+        const y = up ? eased * 0.9 : 0.9 * (1 - eased);
+ 
+        // either animate or finish the cycle
+        mole.position.y = (ud.t >= 1) ? -0.8 : y;
+        if (ud.t >= 1) popUp();
+ 
+        if (time === 0) {
+          running = false;
+          alert('Game Over — score: ' + score);
+        }
+ 
+        updateUI();
+      }
+ 
+      renderer.render(scene, camera);
+    }
+ 
+    requestAnimationFrame(loop);
+</script>
+</body>
+</html>

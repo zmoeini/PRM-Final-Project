@@ -93,6 +93,7 @@ class Simulation {
     this.bodies.push(body);
   }
 
+  // Weighted average
   calculateMassCenter() {
     let sum = new THREE.Vector3(0, 0, 0);
     let sumMass = 0;
@@ -105,21 +106,29 @@ class Simulation {
     return new THREE.Vector3(sum.x / sumMass, sum.y / sumMass, sum.z / sumMass)
   }
 
+  // Gravity simulation
   tick(dt) {
+    // Calculate mass center of all the bodies
     const massCenter = this.calculateMassCenter();
+    // For every body
     for (let i = 0; i < this.bodies.length; i++) {
         let force = new THREE.Vector3(0, 0, 0);
         let currentBody = this.bodies[i];
+        // Calculate a force from every other body pulling current
         for (let j = 0; j < this.bodies.length; j++) {
+            // The body that's pulling current
             let pullingBody = this.bodies[j];
+            // vector: pulling - current 
             let delta = pullingBody.getPos().clone().sub(currentBody.getPos());
             let distance = delta.length();
-            if (distance == 0) {
+            // Don't simulate if the bodies are too close
+            if (distance < 1) {
                 continue;
             }
             let multiplier = this.g * currentBody.mass * pullingBody.mass / distance / distance / distance; 
             force.add(delta.multiplyScalar(multiplier));
         }
+        // divide force by mass to find acceleration
         currentBody.velocity.add(force.multiplyScalar(dt / currentBody.mass));
         currentBody.addPos(currentBody.velocity.clone().multiplyScalar(dt));
     }
@@ -127,6 +136,7 @@ class Simulation {
 
 }
 
+// Mouse
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
@@ -135,12 +145,14 @@ controls.maxDistance = 500;
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.06));
 
+// g acceleration
 let simulation = new Simulation(1);
 
+// A massive object in the center
 let sun = new Sun(new THREE.Vector3(0, 0, 0), 8, 1000);
 simulation.add(sun);
 
-
+// For clarity of camera position (absence of background doesn't let it be cool)
 function addGrid(size, divisions, axesColor, linesColor, opacity) {
     const grid = new THREE.GridHelper(size, divisions, axesColor, linesColor);
     grid.position.y = -sun.size;
@@ -153,25 +165,27 @@ addGrid(200, 20, 0xff00ff, 0xffff00, 0.2);
 
 for (let i = 0; i < 8; i++) {
     
-    let distance = 20 + i * 15;
+    let distance = 15 + i * 10;
 
+    // A random point close the the disk
     let position = new THREE.Vector3(Math.random() - 0.5, (Math.random() - 0.5) / 20, Math.random() - 0.5);
     position.normalize();
     position.multiplyScalar(distance);
 
     let r = position.clone();
     let axis = new THREE.Vector3(0, 1, 0);
+    // Cross product to find a direction perpendicular to both axes (disk rotation and sun direction)
     let direction = new THREE.Vector3().crossVectors(r, axis).normalize();
+    // Magic number 30 to balance the system. TODO: put all magic numbers as constants or even controled by user.
     let speed = 30 / Math.sqrt(distance);
     let velocity = direction.multiplyScalar(speed);
 
-    let t = Math.random();
-    let red = 0.5 + Math.random() * 0.3;
-    let green = Math.random() * 0.7 + 0.3;
-    let blue = Math.random() * 0.8 + 0.2;
-    let color = new THREE.Color(red, green, blue);
+    let red = 0.5 + Math.random() * 0.3; // Not so red
+    let green = Math.random() * 0.7 + 0.3; // More green
+    let blue = Math.random() * 0.8 + 0.2; // MORE blue
+    let color = new THREE.Color(red, green, blue); // Float-base color representation
 
-    let planet = new Body(position, color, velocity, 2, 2);
+    let planet = new Body(position, color, velocity, 2, 3); // size and mass
 
     simulation.add(planet);
 }
@@ -183,13 +197,16 @@ function loop(now) {
   const dt = Math.min((now - clock) / 1000, 0.1);
   clock = now;
 
-  // Do 50 simulation steps every tick
-  for (let i = 0; i < 50; i++) {
-    simulation.tick(dt * 0.1);
+  
+  
+
+  const simulationStepDt = 0.001; // dt of every step of the simulation
+  const steps = dt / simulationStepDt; // how many steps of a constant dt to cover the actual dt
+  for (let i = 0; i < steps; i++) {
+    simulation.tick(simulationStepDt); // simulate gravity
   }
 
-  controls.update();
-
+  controls.update(); // Update mouse
   renderer.render(scene, camera);
 }
 

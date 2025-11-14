@@ -49,7 +49,7 @@
             0.1,
             100
         );
-        camera.position.z = 5;
+        camera.position.z = 15;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(innerWidth, innerHeight);
@@ -94,7 +94,7 @@
             new THREE.SphereGeometry(0.2, 32, 32),
             new THREE.MeshStandardMaterial({ color: 0xbbbbbb })
         );
-        moon.position.x = 1.2;
+        moon.position.x = 2.4;
         earth.add(moon);
 
         // ----------------------------
@@ -111,7 +111,7 @@
 
         // LIGHT
         const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(3, 3, 3);
+        light.position.set(10, 10, 10);
         scene.add(light);
 
         // ----------------------------
@@ -153,20 +153,20 @@
             const t = Date.now() * 0.001;
 
             // Venus orbit (small radius, faster)
-            venusGroup.position.x = 2 * Math.cos(t * 1.8);
-            venusGroup.position.z = 2 * Math.sin(t * 1.8);
+            venusGroup.position.x = 3 * Math.cos(t * 1.8);
+            venusGroup.position.z = 3 * Math.sin(t * 1.8);
 
             // Earth orbit
-            earthGroup.position.x = 3 * Math.cos(t * 1);
-            earthGroup.position.z = 3 * Math.sin(t * 1);
+            earthGroup.position.x = 6 * Math.cos(t * 1);
+            earthGroup.position.z = 6 * Math.sin(t * 1);
 
             // Moon orbit around Earth
             moon.position.x = 1.2 * Math.cos(t * 4);
             moon.position.z = 1.2 * Math.sin(t * 4);
 
             // Mars orbit (larger radius, slower)
-            marsGroup.position.x = 5 * Math.cos(t * 0.6);
-            marsGroup.position.z = 5 * Math.sin(t * 0.6);
+            marsGroup.position.x = 8 * Math.cos(t * 0.6);
+            marsGroup.position.z = 8 * Math.sin(t * 0.6);
 
             controls.update();
             renderer.render(scene, camera);

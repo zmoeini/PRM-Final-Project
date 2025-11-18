@@ -3,4 +3,17 @@
     margin: 0;
     padding: 0;
     background-color: #f4f4f4;
+    text-align: center;
+    overflow: hidden;
+}
+
+.container {
+    position: absolute;
+    transform: translate(20%, 20%);
+    margin-top: 20px;
+    color: white;
+}
+#clock {
+    font-size: 2em;
+    font-weight: bold;
 }

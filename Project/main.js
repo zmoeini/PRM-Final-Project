@@ -18,6 +18,15 @@ controls.maxDistance = 250;
 //texture loader
 const texLoader = new THREE.TextureLoader();
 
+
+const clockElement = document.getElementById('clock');
+
+function updateClock() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString();
+    clockElement.innerHTML = `Time: ${timeString}`;
+}
+
 //stars
 const stars = [];
 
@@ -60,7 +69,7 @@ class Planet {
         new THREE.LineBasicMaterial({ color: 0xffffff })
     );
 
-
+    orbitRing;
 
     //construc
     constructor(radius, color, distanceFromSun, speed, trailLength, BasicMaterial) {
@@ -77,6 +86,13 @@ class Planet {
 
         scene.add(this.mesh);
         scene.add(this.trail);
+
+        this.orbitRing = new THREE.Mesh(
+            new THREE.TorusGeometry(distanceFromSun, 0.2, 2, 100),
+            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5})
+        );
+        this.orbitRing.rotation.x = Math.PI / 2;
+        scene.add(this.orbitRing);
     }
 
 
@@ -85,7 +101,7 @@ class Planet {
         this.mesh.position.x = this.distanceFromSun * Math.cos(Date.now() * this.speed);
         this.mesh.position.z = this.distanceFromSun * Math.sin(Date.now() * this.speed);
         this.mesh.position.y = sun.position.y;
-        this.Trail();
+        //this.Trail();
     }
 
     Rotation() {
@@ -122,7 +138,6 @@ const sunTexture = new THREE.MeshStandardMaterial({
     emissiveMap: texLoader.load('/textures/sun/sun-color.jpg'),
 });
 
-
 const sun = new THREE.Mesh(
     new THREE.SphereGeometry(10, 32, 32),
     sunTexture
@@ -140,7 +155,7 @@ function moveStars(){
         
         //move only the nearby stars
         if(distance < 300){
-            star.position.y -= 0.05;
+            star.position.y -= 0.1;
 
             if(star.position.y < -200){
                 star.position.y = 200;
@@ -272,6 +287,7 @@ addEventListener('click', (event) => {
 function loop() {
     requestAnimationFrame(loop);
 
+
     sunTexture.emissiveIntensity = Math.sin(Date.now() * 0.001) * 0.5 + 1;
     sun.rotation.y += 0.001;
     //sun.rotation.x += 0.0005;
@@ -286,6 +302,8 @@ function loop() {
         planet.Orbit(sun);
         planet.Rotation();
     });
+
+    updateClock();
 
     renderer.render(scene, camera);
 }

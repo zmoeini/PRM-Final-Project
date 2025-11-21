@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ThreeJS Planets</title>
-
+    <title>Solar System</title>
     <style>
         html, body {
             margin: 0;
@@ -23,7 +22,6 @@
             background: rgba(0,0,0,0.6);
         }
     </style>
-
     <script type="importmap">
     {
         "imports": {
@@ -33,23 +31,23 @@
     }
     </script>
 </head>
-
 <body>
-    <div id="info">Click a planet</div>
-
+    <div id="info">Solar System</div>
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         const scene = new THREE.Scene();
 
-        const camera = new THREE.PerspectiveCamera(
-            75,
-            innerWidth / innerHeight,
-            0.1,
-            100
-        );
-        camera.position.z = 15;
+        // Grid floor
+        const grid = new THREE.GridHelper(50, 50);
+        grid.material.opacity = 0.2;
+        grid.material.transparent = true;
+        scene.add(grid);
+        
+
+        const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 20);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(innerWidth, innerHeight);
@@ -57,120 +55,115 @@
 
         const controls = new OrbitControls(camera, renderer.domElement);
 
-        // ----------------------------
-        // SUN
-        // ----------------------------
-        const sun = new THREE.Mesh(
-            new THREE.SphereGeometry(1.2, 32, 32),
-            new THREE.MeshBasicMaterial({ color: 0xffdd55 })
-        );
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.PointLight(0xffffff, 2, 100);
+        sunLight.position.set(0, 0, 0);
+        scene.add(sunLight);
+
+        // Helper to create planets
+        function createPlanet(radius, color) {
+            return new THREE.Mesh(
+                new THREE.SphereGeometry(radius, 32, 32),
+                new THREE.MeshStandardMaterial({ color })
+            );
+        }
+
+        // Sun
+        const sun = createPlanet(1.5, 0xffdd55);
+        sun.material.emissive = new THREE.Color(0xffdd55);
+        sun.material.emissiveIntensity = 0.3;
         scene.add(sun);
 
-        // ----------------------------
-        // VENUS (BETWEEN SUN AND EARTH)
-        // ----------------------------
+        // Sun glow
+        const sunGlow = new THREE.Mesh(
+            new THREE.SphereGeometry(1.8, 32, 32),
+            new THREE.MeshBasicMaterial({ color: 0xffdd55, transparent: true, opacity: 0.2 })
+        );
+        scene.add(sunGlow);
+
+        // Mercury
+        const mercuryGroup = new THREE.Group();
+        scene.add(mercuryGroup);
+        const mercury = createPlanet(0.3, 0x8c7853);
+        mercuryGroup.add(mercury);
+
+        // Venus
         const venusGroup = new THREE.Group();
         scene.add(venusGroup);
-
-        const venus = new THREE.Mesh(
-            new THREE.SphereGeometry(0.45, 32, 32),
-            new THREE.MeshStandardMaterial({ color: 0xffa500 }) // orange
-        );
+        const venus = createPlanet(0.4, 0xffa500);
         venusGroup.add(venus);
 
-        // ----------------------------
-        // EARTH + MOON
-        // ----------------------------
+        // Earth + Moon
         const earthGroup = new THREE.Group();
         scene.add(earthGroup);
-
-        const earth = new THREE.Mesh(
-            new THREE.SphereGeometry(0.5, 32, 32),
-            new THREE.MeshStandardMaterial({ color: 0x2266ff })
-        );
+        const earth = createPlanet(0.5, 0x2266ff);
         earthGroup.add(earth);
-
-        const moon = new THREE.Mesh(
-            new THREE.SphereGeometry(0.2, 32, 32),
-            new THREE.MeshStandardMaterial({ color: 0xbbbbbb })
-        );
+        const moon = createPlanet(0.15, 0xbbbbbb);
         earth.add(moon);
 
-        // ----------------------------
-        // MARS (AFTER EARTH)
-        // ----------------------------
+        // Mars
         const marsGroup = new THREE.Group();
         scene.add(marsGroup);
-
-        const mars = new THREE.Mesh(
-            new THREE.SphereGeometry(0.45, 32, 32),
-            new THREE.MeshStandardMaterial({ color: 0xff5533 }) // red
-        );
+        const mars = createPlanet(0.4, 0xff5533);
         marsGroup.add(mars);
 
-        // LIGHT
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(10, 10, 10);
-        scene.add(light);
+        // Jupiter
+        const jupiterGroup = new THREE.Group();
+        scene.add(jupiterGroup);
+        const jupiter = createPlanet(1.0, 0xd8ca9d);
+        jupiterGroup.add(jupiter);
 
-        // ----------------------------
-        // CLICK DETECTION
-        // ----------------------------
+        // Click detection
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
-
         addEventListener('click', (event) => {
-
             pointer.x = (event.clientX / innerWidth) * 2 - 1;
             pointer.y = -(event.clientY / innerHeight) * 2 + 1;
-
             raycaster.setFromCamera(pointer, camera);
-
-            const hits = raycaster.intersectObjects([sun, venus, earth, moon, mars]);
+            const hits = raycaster.intersectObjects([sun, mercury, venus, earth, moon, mars, jupiter]);
             if (!hits.length) return;
-
             const hit = hits[0].object;
-
-            let name =
-                hit === sun   ? 'Sun'   :
-                hit === venus ? 'Venus' :
-                hit === earth ? 'Earth' :
-                hit === moon  ? 'Moon'  :
-                hit === mars  ? 'Mars'  :
-                'Unknown';
-
-            document.getElementById('info').innerText = "You Clicked: " + name;
+            let name = hit === sun ? 'Sun' : hit === mercury ? 'Mercury' : hit === venus ? 'Venus' : hit === earth ? 'Earth' : hit === moon ? 'Moon' : hit === mars ? 'Mars' : hit === jupiter ? 'Jupiter' : 'Unknown';
+            document.getElementById('info').innerText = "Clicked: " + name;
         });
 
+        // Resize
+        addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        });
 
-        // ----------------------------
-        // ANIMATION
-        // ----------------------------
+        // Animation
         function animate() {
             requestAnimationFrame(animate);
-
             const t = Date.now() * 0.001;
 
-            // Venus orbit (small radius, faster)
-            venusGroup.position.x = 3 * Math.cos(t * 1.8);
-            venusGroup.position.z = 3 * Math.sin(t * 1.8);
+            // Orbits
+            mercuryGroup.position.x = 2 * Math.cos(t * 2.5);
+            mercuryGroup.position.z = 2 * Math.sin(t * 2.5);
 
-            // Earth orbit
-            earthGroup.position.x = 6 * Math.cos(t * 1);
-            earthGroup.position.z = 6 * Math.sin(t * 1);
+            venusGroup.position.x = 3.5 * Math.cos(t * 1.8);
+            venusGroup.position.z = 3.5 * Math.sin(t * 1.8);
 
-            // Moon orbit around Earth
-            moon.position.x = 1.2 * Math.cos(t * 4);
-            moon.position.z = 1.2 * Math.sin(t * 4);
+            earthGroup.position.x = 5 * Math.cos(t * 1);
+            earthGroup.position.z = 5 * Math.sin(t * 1);
 
-            // Mars orbit (larger radius, slower)
-            marsGroup.position.x = 8 * Math.cos(t * 0.6);
-            marsGroup.position.z = 8 * Math.sin(t * 0.6);
+            moon.position.x = 1 * Math.cos(t * 5);
+            moon.position.z = 1 * Math.sin(t * 5);
+
+            marsGroup.position.x = 7 * Math.cos(t * 0.8);
+            marsGroup.position.z = 7 * Math.sin(t * 0.8);
+
+            jupiterGroup.position.x = 10 * Math.cos(t * 0.5);
+            jupiterGroup.position.z = 10 * Math.sin(t * 0.5);
 
             controls.update();
             renderer.render(scene, camera);
         }
-
         animate();
     </script>
 </body>

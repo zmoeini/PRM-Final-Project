@@ -29,24 +29,70 @@
  
     scene.add(new THREE.HemisphereLight(0x9ecfff,0x0b0d12,0.9));
     const dl = new THREE.DirectionalLight(0xffffff,0.7);
-     dl.position.set(3,6,4); scene.add(dl);
+    dl.position.set(3,6,4); scene.add(dl);
  
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(10,8), new THREE.MeshStandardMaterial({color:0x0f172a,roughness:.9}));
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(12,12), new THREE.MeshStandardMaterial({color:0x0f172a,roughness:.9}));
     ground.rotation.x=-Math.PI/2; scene.add(ground);
- 
+    
+    //*New* going to add 9 mole holes using three.Vector --> will also have to adjust how the mole spawning works later
+    const holePositions = [
+      new THREE.Vector3(-4,0,-4),
+      new THREE.Vector3(0,0,-4),
+      new THREE.Vector3(4,0,-4),
+      new THREE.Vector3(-4,0,0),
+      new THREE.Vector3(0,0,0),
+      new THREE.Vector3(4,0,0),
+      new THREE.Vector3(-4,0,4),
+      new THREE.Vector3(0,0,4),
+      new THREE.Vector3(4,0,4),
+    ];
+
+    //need to make a mole class and an array of moles now so we can loop through and spawn at positions
+    class Mole 
+    {
+      constructor(position)
+      {
+        this.hiddenPosY = -0.8;
+        this.mole = new THREE.Mesh(new THREE.SphereGeometry(.55,16,14), new THREE.MeshStandardMaterial({color:0xf97316}));
+        this.mole.position.set(position.x, this.hiddenPosY, position.z); // hidden (below ground)
+        scene.add(this.mole);
+        this.t = 0; // initializing the anim frame to be at 0 aka hidden
+      }
+
+      ResetPosition() //giving mole a method to reset its position (so it the code is cleaner in the loop)
+      {
+        this.mole.position.y = this.hiddenPosY;
+        this.t = 0;
+      }
+
+      UpdateMoles(dt) //method to update the mole position based on time
+      {
+        this.t += dt * 1.8;
+        const up = this.t < 0.5;
+        const t = up ? this.t / 0.5 : (this.t - 0.5) / 0.5;
+        const y = up ? THREE.MathUtils.smoothstep(t, 0, 1) * 0.9 : 0.9 * (1 - THREE.MathUtils.smoothstep(t, 0, 1));
+        this.mole.position.y = (this.t >= 1) ? this.hiddenPosY : y;
+        if (this.t >= 1)
+        {
+          this.ResetPosition();
+        } 
+      }
+    }
+    const moles = holePositions.map(pos => new Mole(pos));
+
     // hole ring
     const ring = new THREE.Mesh(new THREE.TorusGeometry(.7,.12,12,32), new THREE.MeshStandardMaterial({color:0x334155}));
     ring.rotation.x=-Math.PI/2; ring.position.y=0.02; scene.add(ring);
  
     // mole sphere
-    const mole = new THREE.Mesh(new THREE.SphereGeometry(.55,16,14), new THREE.MeshStandardMaterial({color:0xf97316}));
-    mole.position.y = -0.8; // hidden (below ground)
-    scene.add(mole);
+    // const mole = new THREE.Mesh(new THREE.SphereGeometry(.55,16,14), new THREE.MeshStandardMaterial({color:0xf97316}));
+    // mole.position.y = -0.8; // hidden (below ground)
+    // scene.add(mole);
  
     // spawn every ~1s, speeds up slightly
     let spawnMs = 900, sinceSpawn = 0;
-    function spawn(){ mole.position.y = -0.8; mole.userData.t = 0; }
-    spawn();
+    // function spawn(){ mole.position.y = -0.8; mole.userData.t = 0; }
+    // spawn();
  
     // click = raycast
     const ray = new THREE.Raycaster(); const pt = new THREE.Vector2();
@@ -70,19 +116,37 @@
     function loop(now){
       requestAnimationFrame(loop);
        const dt=Math.min((now-last)/1000, .05); last=now;
-      if(running && time>0){
+      if(running && time>0)
+      {
         time=Math.max(0,time-dt);
-         sinceSpawn+=dt*1000;
-         spawnMs =Math.max(450, spawnMs-0.15);
-        if(sinceSpawn>=spawnMs){ sinceSpawn=0; mole.position.y=-0.8; mole.userData.t=0; }
+        sinceSpawn+=dt*1000;
+        spawnMs =Math.max(450, spawnMs-0.15);
+
+        if(sinceSpawn>=spawnMs)
+        { 
+          sinceSpawn=0;
+          const randomMole = moles[Math.floor(Math.random() * moles.length)]; //selecting a random mole from the array
+          randomMole.ResetPosition();
+          //mole.position.y=-0.8; 
+          //mole.userData.t=0; 
+        }
+        moles.forEach(element => 
+        {
+          element.UpdateMoles(dt);
+        });
         // simple pop anim up then down in ~0.9s
-        const ud=mole.userData; ud.t=(ud.t||0)+dt*1.8;
-        const up=ud.t<0.5;
-         const t=up?ud.t/0.5:(ud.t-0.5)/0.5;
-        const y = up ? THREE.MathUtils.smoothstep(t,0,1)*0.9 : 0.9*(1-THREE.MathUtils.smoothstep(t,0,1));
-        mole.position.y = (ud.t>=1)? -0.8 : y;
-        if(ud.t>=1) spawn();
-        if(time===0){ running=false; alert('Game Over — score: '+score); }
+        // const ud=mole.userData; 
+        // ud.t=(ud.t||0)+dt*1.8;
+        // const up=ud.t<0.5;
+        // const t=up?ud.t/0.5:(ud.t-0.5)/0.5;
+        // const y = up ? THREE.MathUtils.smoothstep(t,0,1)*0.9 : 0.9*(1-THREE.MathUtils.smoothstep(t,0,1));
+        // mole.position.y = (ud.t>=1)? -0.8 : y;
+        //if(ud.t>=1) spawn();
+        if(time===0)
+        { 
+          running=false; 
+          alert('Game Over — score: '+score); 
+        }
         updateUI();
       }
       renderer.render(scene,camera);

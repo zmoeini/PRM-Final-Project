@@ -41,7 +41,7 @@
 
         // Grid floor
         const grid = new THREE.GridHelper(50, 50);
-        grid.material.opacity = 0.2;
+        grid.material.opacity = 0.09;
         grid.material.transparent = true;
         scene.add(grid);
         
@@ -115,6 +115,32 @@
         scene.add(jupiterGroup);
         const jupiter = createPlanet(1.0, 0xd8ca9d);
         jupiterGroup.add(jupiter);
+
+        // Helper to create orbit rings
+        function createRing(distance) {
+            const ring = new THREE.Mesh(
+                new THREE.RingGeometry(distance - 0.05, distance + 0.05, 64),
+                new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.3, side: THREE.DoubleSide })
+            );
+            ring.rotation.x = -Math.PI / 2;
+            return ring;
+        }
+
+        // Orbit rings
+        const mercuryRing = createRing(2);
+        scene.add(mercuryRing);
+
+        const venusRing = createRing(3.5);
+        scene.add(venusRing);
+
+        const earthRing = createRing(5);
+        scene.add(earthRing);
+
+        const marsRing = createRing(7);
+        scene.add(marsRing);
+
+        const jupiterRing = createRing(10);
+        scene.add(jupiterRing);
 
         // Click detection
         const raycaster = new THREE.Raycaster();

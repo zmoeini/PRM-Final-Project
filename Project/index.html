@@ -6,25 +6,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar System</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 </head>
 
 <script type="importmap">
     {
         "imports":{
-            "three":"https://unpkg.com/three@0.160.0/build/three.module.js"
+            "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+            "RGBELoader":"https://unpkg.com/three@0.160.0/examples/jsm/loaders/RGBELoader.js" 
         }
     }
 
 </script>
+
 <body>
 
+    <audio class="backgroundMusic" controls autoplay loop>
+        <source src="/PRM-Final-Project/audio/background-audio.mp3" type="audio/mpeg">
+    </audio>
+
     <div class="container">
-        <h1 id="clock">Time: </h1>
+        <h1 id="clock"> <i class="fa-regular fa-clock"></i></h1>
+        <h2><i class="fa-solid fa-volume-high"> </i>
+            <input type="range" min="0" max="1" value="1" step="0.1" id="volumeSlider">
+        </h2>
     </div>
 
     <div>
-       <script type="module" src="main.js"></script>
+        <script type="module" src="main.js"></script>
     </div>
-</body>
 
+</body>

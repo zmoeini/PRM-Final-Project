@@ -41,7 +41,27 @@
         //minimal state
         let time = 30;
         let score = 0;
+        let misses = 0;
+        let streaks = 0;
+        let comboMultiplier = 1;
         let running = true;
+
+        //arrays for rings and moles 
+        const rings = [];
+        const moles = [];
+
+        let selectedMole = null;
+
+        // grid for mole and rings placement x,z pos
+        const gameArea=
+        [
+            [-2,0], [0,0], [2,0],[-2,-2], [0,-2], [2,-2],[-2,2], [0,2], [2,2],
+        ];
+
+        for(let i =0; i<gameArea.length; i++){
+
+
+        }
 
         //WEEK1--three--setup
         const scene = new THREE.Scene(); //create scene
@@ -83,18 +103,29 @@
     // 0.7 ring size (outer radius)
     // 0.12 = ring thickness(tube radius)
     //32 how many segments around the big circle
-    const ringMaterial = new THREE.MeshStandardMaterial({color:0xf97316});
-    const ring = new THREE.Mesh(ringShape,ringMaterial);
-    ring.rotation.x = Math.PI/2; //ring flat
-    ring.position.y = 0.02; //pos y lifts ring above the ground
-    scene.add(ring);
+    const ringMaterial = new THREE.MeshStandardMaterial({color:0x3b4561});
 
-    //mole sphere
+      //mole sphere
     const moleShape = new THREE.SphereGeometry(0.55,16,14); //craete sphere radius -- width --height
     const moleMaterial = new THREE.MeshStandardMaterial({color:0xf97316});
-    const mole = new THREE.Mesh(moleShape,moleMaterial);
-    mole.position.y =-0.8; //hidden (underground)
-    scene.add(mole);
+    
+        for(let i = 0;i < gameArea.length;i++){
+            const x = gameArea[i][0]; //x pos
+            const z = gameArea[i][1]; //z pos
+
+            const ring = new THREE.Mesh(ringShape,ringMaterial);
+            ring.rotation.x = Math.PI/2; //ring flat
+            ring.position.set(x,0.02,z); //pos y lifts ring above the ground
+            scene.add(ring);
+            rings.push(ring); //stores ring inside the array
+
+            const mole = new THREE.Mesh(moleShape,moleMaterial);
+            mole.position.set(x,-0.8, z); //hidden (underground)
+            mole.userData.t = 0;
+            scene.add(mole);
+            moles.push(mole); //stores mole inside the array
+        }
+
 
     let popUpTime = 900;
     //we plan to popup the mole about every 900milisecs (1sec)
@@ -102,10 +133,23 @@
     //tracks how long from last popup
 
     function PopUp(){
-        //hide mole underground
-        mole.position.y = -0.8;
-        mole.userData.t = 0;  //restart timer to know popup 
+        //hide moles underground loop
+        for(let i = 0; i< moles.length; i++){
+            moles[i].position.y = -0.8;
+            moles[i].userData.t = 0;  //restart timer to know popup 
+        }
+
+        //rnd popup of 1 mole
+        const chooseMole = Math.floor(Math.random()* moles.length);
+
+        selectedMole = moles [chooseMole];
+
+        selectedMole.userData.t = 0; //reset anim timer 
         sincePopUp = 0; //reset timer after popup
+
+
+
+      
     }
 
     PopUp(); //popup once
@@ -118,7 +162,7 @@
     //coordiantion represents cam view plane 
     
     const ray = new THREE.Raycaster(); // create a laser beam that will shoot from thge camera from user perspectiev throught the pos 
-//through the ps in 3d world
+    //through the ps in 3d world
 
     const  pTime = new THREE.Vector2();// a 2D point to hold the mosue /touch pos
 
@@ -147,19 +191,31 @@
         //ray goes from cam to point in the game
         ray.setFromCamera(pTime,camera);
         
-        const hit = ray.intersectObject(mole,false)[0];
-        //fire the ray and check if it hits the mosue 
-        //false means does not search insaide the meshes 
-        //[0] grab closest hit
+        //check all moles to see if it hits
+        const hitAll = ray.intersectObjects(moles,false);
 
-        //if it hits happened I wil give 1 score
-        if(hit){
-            score++;
-            //put mole in the base pos
-            mole.position.y = -0.8;//under the ground
-            updateUI();
+        //stores hit
+        let hit = null; 
+
+        //loops to find popped up mole
+        for(let i = 0; i< hitAll.length;i++){
+
+            if(hitAll[i].object.position.y > -0.79){ 
+                hit = hitAll[i];
+                break;
+            }
+
         }
+            //fire the ray and check if it hits the mosue 
+            //false means does not search insaide the meshes 
+            //[0] grab closest hit
 
+          //if it hits happened I wil give 1 score
+            if(hit != null) {
+                score++;
+                hit.object.position.y = -0.8; //underground
+                 updateUI();
+            }    
 
     }//End of onPointer
 
@@ -195,19 +251,20 @@
         if(sincePopUp > popUpTime)
         {
             PopUp();
-            mole.position.y= -0.8; //underground
-            mole.userData.t = 0; 
+        
             //sincepopup how much time passed since last mole appeared
             //popup time how many ms to wait before popping up again
 
             //sincePopUp >= popUpTime if enough time has passed 
             //reset sincePopUp to zero 
         }
+
+        if(selectedMole != null){    
         //we manage our loop in 8 steps
         
         //2-getting and updating the mole anim state
 
-        const userData = mole.userData;
+        const userData = selectedMole.userData; //get data from selected mole
         userData.t = (userData.t||0) + dt * 1.8; //time since popup in seconds
 
 
@@ -232,10 +289,10 @@
         //6-apply new pos or rest
         //if whenthe mole is done up n down (t<1) 
         // we reset the mole pos underground
-        mole.position.y = (userData.t < 1) ? y : -0.8;
+        selectedMole.position.y = (userData.t < 1) ? y : -0.8;
         if(userData.t >= 1) PopUp();
-        
-    
+        }
+
         //7-end of game 
         if(time === 0){
             running = false;

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Whack-a-mole — Tiny</title>
+<style>
+    html,body{
+      margin:0;
+      height:100%;
+      background:black;
+      overflow:hidden;
+      font:14px system-ui;
+    }
+    #ui{
+      position:fixed;
+      left:10px; top:10px;
+      color:white; background:black;
+      padding:6px 10px; border-radius:8px;
+    }
+</style>
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+      }
+    }
+</script>
+</head>
+<body>
+<div id="ui"> ⏱<span id="t">30.0</span>s · ⭐<span id="s">0</span></div>
+ 
+  <script type="module">
+    import * as THREE from 'three';
+ 
+    // ----- game state -----
+    let time = 30;          // seconds
+    let score = 0;
+    let running = true;
+ 
+    // ----- three.js setup -----
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b0d12);
+ 
+    const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 100);
+    camera.position.set(0, 6, 8);
+    camera.lookAt(0, 0, 0);
+ 
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.appendChild(renderer.domElement);
+ 
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+ 
+    // lights
+    scene.add(new THREE.HemisphereLight(0x9ecfff, 0x0b0d12, 0.9));
+    const dl = new THREE.DirectionalLight(0xffffff, 0.7);
+    dl.position.set(3, 6, 4);
+    scene.add(dl);
+ 
+    // ground
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(10, 8),
+      new THREE.MeshStandardMaterial({ color:0x0f172a, roughness:0.9 })
+    );
+    ground.rotation.x = -Math.PI/2;
+    scene.add(ground);
+ 
+    // ring
+   
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.12, 12, 32),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    ring.rotation.x = -Math.PI/2;
+    ring.position.y = 0.02;
+    scene.add(ring);
+
+  const ring2 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.12, 12, 32),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    ring2.rotation.x = -Math.PI/2;
+    ring2.position.y = 0.02;
+    scene.add(ring2);
+    ring2.position.set(3,0,0);
+
+
+    const ring3 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.12, 12, 32),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    ring3.rotation.x = -Math.PI/2;
+    ring3.position.y = 0.02;
+    scene.add(ring3);
+    ring3.position.set(-3,0,0);
+
+    const ring4 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.12, 12, 32),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    ring4.rotation.x = -Math.PI/2;
+    ring4.position.y = 0.02;
+    scene.add(ring4);
+    ring4.position.set(3,0,3);
+
+    const ring5 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.12, 12, 32),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    ring5.rotation.x = -Math.PI/2;
+    ring5.position.y = 0.02;
+    scene.add(ring5);
+    ring5.position.set(0,0,3);
+
+    const ring6 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.12, 12, 32),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    ring6.rotation.x = -Math.PI/2;
+    ring6.position.y = 0.02;
+    scene.add(ring6);
+    ring6.position.set(-3,0,3);
+
+    const ring7 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.12, 12, 32),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    ring7.rotation.x = -Math.PI/2;
+    ring7.position.y = 0.02;
+    scene.add(ring7);
+    ring7.position.set(3,0,-3);
+    const ring8 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.12, 12, 32),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    ring8.rotation.x = -Math.PI/2;
+    ring8.position.y = 0.02;
+    scene.add(ring8);
+    ring8.position.set(-3,0,-3);
+
+    const ring9 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7, 0.12, 12, 32),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    ring9.rotation.x = -Math.PI/2;
+    ring9.position.y = 0.02;
+    scene.add(ring9);
+    ring9.position.set(0,0,-3);
+
+
+
+
+    // mole
+    const mole = new THREE.Mesh(
+      new THREE.SphereGeometry(0.55, 16, 14),
+      new THREE.MeshStandardMaterial({ color:0xf97316 })
+    );
+    mole.position.y = -0.8; // hidden underground
+    scene.add(mole);
+    // store ring positions
+const ringPositions = [
+  ring.position, ring2.position, ring3.position,
+  ring4.position, ring5.position, ring6.position,
+  ring7.position, ring8.position, ring9.position
+];
+
+// choose random hole and move mole
+function randomHole() {
+  const idx = Math.floor(Math.random() * 9); // 0–8
+  const pos = ringPositions[idx];
+  mole.position.set(pos.x, -0.8, pos.z); // start hidden at that hole
+  mole.userData.t = 0;
+}
+
+
+function popUp() {
+  randomHole();
+}
+
+ 
+    // popup timing
+    let popUpTime = 4000;     // ms between popups
+    let sincePopUp = 0;      // ms since last popup
+ 
+   
+    popUp();
+    console.log(mole.position);
+    // ----- raycasting -----
+    const ray = new THREE.Raycaster();
+    const pt = new THREE.Vector2();
+ 
+    const ElT = document.getElementById('t');
+    const ElS = document.getElementById('s');
+ 
+    function updateUI() {
+      ElT.textContent = time.toFixed(1);
+      ElS.textContent = String(score);
+    }
+ 
+    function onPointer(e){
+      if(!running) return;
+ 
+      // convert to NDC (-1..+1). NOTE: y must be inverted.
+      pt.x = (e.clientX / innerWidth) * 2 - 1;
+      pt.y = -(e.clientY / innerHeight) * 2 + 1;
+ 
+      ray.setFromCamera(pt, camera);
+      const hit = ray.intersectObject(mole, false)[0];
+ 
+      if (hit) {
+        score++;
+        mole.position.y = -0.8; // knock it back down
+        updateUI();
+      }
+    }
+    addEventListener('pointerdown', onPointer, { passive:true });
+ 
+    // ----- main loop -----
+    let last = performance.now();
+    updateUI();
+ 
+    function loop(now){
+      requestAnimationFrame(loop);
+ 
+      const dt = Math.min((now - last) / 1000, 0.05); // seconds
+      last = now;
+ 
+      if (running && time > 0) {
+        // countdown
+        time = Math.max(0, time - dt);
+ 
+        // popup cadence
+        sincePopUp += dt * 1000; // ms
+        if (sincePopUp >= popUpTime) {
+          sincePopUp = 0;
+          popUp();
+        }
+ 
+        // animation (up then down in ~1s total)
+        const ud = mole.userData;
+        ud.t = (ud.t || 0) + dt * 0.8;     // 0..1 over ~0.56s (1/1.8)
+        const up = ud.t < 0.5;             // first half: going up
+        const t = up ? (ud.t / 0.5)        // normalize 0..1
+                     : ((ud.t - 0.5) / 0.5);
+ 
+        // smooth up to 0.9, then smooth down from 0.9
+        const eased = THREE.MathUtils.smoothstep(t, 0, 1);
+        const y = up ? eased * 0.9 : 0.9 * (1 - eased);
+ 
+        // either animate or finish the cycle
+        mole.position.y = (ud.t >= 1) ? -0.8 : y;
+        if (ud.t >= 1) popUp();
+ 
+        if (time === 0) {
+          running = false;
+          alert('Game Over — score: ' + score);
+        }
+ 
+        updateUI();
+      }
+ 
+      renderer.render(scene, camera);
+    }
+ 
+    requestAnimationFrame(loop);
+</script>
+</body>
+</html>

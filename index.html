@@ -2,17 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title> SOLAR SYSTEM</title>
+    <title>SOLAR SYSTEM - Emmanuel Leon 2025-11-25</title>
     <style>
-        /*Remove elements to create a full screen canvas Emmanuel Leon 2025-11-14 */
-      body { margin: 0; overflow: hidden;background-color: blue; } 
-  
+      /* Fullscreen canvas with bright background - Emmanuel Leon 2025-11-17 */
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: radial-gradient(circle at center, #f0f7ff 0%, #cce3ff 100%); /*Adding background  2025-11-20*/
+        color: #111;
+        font-family: sans-serif;
+      }
+      /*This will show the info of the clicked planets the background has to have a light color Emmanuel Leon 2025-11-24*/
+      #info {   
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 10px 15px;
+        border-radius: 10px;
+        font-weight: bold;
+        color: #222;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      }
     </style>
 
-    <!--THIS IS ESSENTIAL TO MAKE THE CODE WORK (IMPORTING THREEJS AND OBRITS CONTROLS FROM CDN) THE CODE WONT WORK IF YOU DONT IMPORT THESE LIBRARIES Emmanuel Leon 2025-11-12-->
+    <!-- Importing THREE.js and OrbitControls -->
     <script type="importmap">
       {
-        
         "imports": {
           "three": "https://unpkg.com/three@0.168.0/build/three.module.js",
           "OrbitControls": "https://unpkg.com/three@0.168.0/examples/jsm/controls/OrbitControls.js"
@@ -22,31 +38,109 @@
   </head>
 
   <body>
-    <script type="module">
-      // WEEK 1 - SETTING THE SCENE
+    <div id="info">Click a planet</div>
 
-        //IMPORTING LIBRARIES Emmanuel Leon 2025-11-14
+    <script type="module">
       import * as THREE from 'three';
       import { OrbitControls } from 'OrbitControls';
 
-      //  Creating the Scene - Emmanuel Leon 2025-11-14
+      // Scene setup
       const scene = new THREE.Scene();
 
       // Camera
-      //Setting up the camera 
-      // FOV = 60 grados 
-      // Aspect ratio = tamaño de pantalla
-      // Near/Far = qué tan cerca/lejos se renderiza
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100); //changing to 60 FOV Emmanuel Leon 2025-11-24 modified
+      camera.position.set(0, 10, 25);
 
-      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(0, 20, 40);  // Adjusting the camera to show all the system THE POSITION SHOULD BE FAR ENOUGH TO SEE ALL THE SOLAR SYSTE WITH GOOD PERSPECTIVE EMMANUEL LEON 2025-11-14
-
-      // Renderer  THIS SECTION RENDERS THE WHOLE CANVAS DRAWING THE ELEMENTS  Emmanuel Leon 2025-11-14
+      // Renderer
       const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement); // YOU SHOULD APPEND THE DOCUMENT TO THE DOM
+      renderer.shadowMap.enabled = true;
+      document.body.appendChild(renderer.domElement);// appended to the DOM 
 
-    
+      // Controls
+      const controls = new OrbitControls(camera, renderer.domElement);
+
+      // Lighting - Brighter overall ambient + sunlight creation of the lighting essential to see objects in screen Emmanuel Leon 2025-11-24 
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const sunLight = new THREE.PointLight(0xffffff, 2, 150);
+      sunLight.castShadow = true;
+      scene.add(sunLight);
+
+
+/*here we Add the 3 spheres sun, earth and Mars  */
+      // ---- SUN ----
+      const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFF26D, emissive: 0xFFD700, emissiveIntensity: 1.5 });
+      const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
+      const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+      scene.add(sun);
+
+      // ---- EARTH ---- (Blue-Green)
+      const earthMaterial = new THREE.MeshStandardMaterial({
+        color: 0x1E90FF,
+        emissive: 0x009999,
+        emissiveIntensity: 0.2,
+        roughness: 0.5,
+        metalness: 0.1
+      });
+      const earthGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+      const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+      earth.position.x = 6;
+      scene.add(earth);
+
+      // ---- MARS ---- (Bright orange-red)
+      const marsMaterial = new THREE.MeshStandardMaterial({
+        color: 0xFF7043,
+        emissive: 0x993300,
+        emissiveIntensity: 0.2,
+        roughness: 0.6
+      }); 
+      const marsGeometry = new THREE.SphereGeometry(0.6, 32, 32);
+      const mars = new THREE.Mesh(marsGeometry, marsMaterial);
+      mars.position.x = 10;
+      scene.add(mars);
+
+      // --- Raycasting for Planet Selection adding raycasting for the interaction with the planets when the objects intersect Emmanuel Leon 2025-11-25---
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+// logic of the interaction with the planets
+      window.addEventListener('click', (event) => {
+        pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+        pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(pointer, camera);
+        const hits = raycaster.intersectObjects([sun, earth, mars]);
+        if (hits.length > 0) {
+          const hit = hits[0].object;
+          const name = hit === sun ? 'Sun' : hit === earth ? 'Earth' : 'Mars';
+          document.getElementById('info').innerText = `You Clicked: ${name}`;
+        }
+      });
+
+      // --- Animation ---
+      function animate() {
+        requestAnimationFrame(animate);
+        const t = Date.now() * 0.001;
+
+        earth.position.x = 6 * Math.cos(t * 0.5);
+        earth.position.z = 6 * Math.sin(t * 0.5);
+
+        mars.position.x = 10 * Math.cos(t * 0.3);
+        mars.position.z = 10 * Math.sin(t * 0.3);
+
+        sun.rotation.y += 0.002;
+
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // --- Resize Handling ---
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
     </script>
   </body>
 </html>

@@ -16,7 +16,7 @@ document.body.appendChild(renderer.domElement);
 //controls
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.minDistance = 50;
-controls.maxDistance = 1000;
+controls.maxDistance = 2000;
 controls.enableDamping = true;
 controls.dampingFactor = 1;
 
@@ -25,6 +25,8 @@ const texLoader = new THREE.TextureLoader();
 const clockElement = document.getElementById('clock');
 const audio = document.getElementById('backgroundMusic');
 const volumeSlider = document.getElementById('volumeSlider');
+
+const speed = 1;
 
 new RGBELoader().load('/PRM-Final-Project/textures/background/nebula.hdr', function (texture) {
     texture.mapping = THREE.EquirectangularReflectionMapping;
@@ -69,7 +71,7 @@ function createStars() {
 createStars();
 
 
-const speed = 20;
+
 
 class Planet {
 
@@ -198,7 +200,7 @@ const sunTexture = new THREE.MeshStandardMaterial({
 });
 
 const sun = new THREE.Mesh(
-    new THREE.SphereGeometry(30, 32, 32),
+    new THREE.SphereGeometry(109, 32, 32),
     sunTexture
 );
 scene.add(sun);
@@ -233,9 +235,9 @@ const mercuryTexture = new THREE.MeshStandardMaterial({
     emissiveIntensity: 30,
 });
 const mercury = new Planet(
-    1.5,
+    0.383,
     0xbfbfbf,
-    20,
+    200,
     88,
     mercuryTexture,
     0,
@@ -253,9 +255,9 @@ const venusTexture = new THREE.MeshStandardMaterial({
     emissiveIntensity: 50,
 });
 const venus = new Planet(
-    2.9,
+    0.949,
     0xffd9b3,
-    37,
+    270,
     225,
     venusTexture,
     0,
@@ -277,9 +279,9 @@ const earthTexture = new THREE.MeshStandardMaterial({
 });
 
 const earth = new Planet(
-    3,
+    1,
     0x0000ff,
-    51,
+    320,
     365,
     earthTexture,
     0,
@@ -307,9 +309,9 @@ const marsTexture = new THREE.MeshStandardMaterial({
     emissiveIntensity: 10,
 });
 const mars = new Planet(
-    2.5,
+    0.532,
     0xff0000,
-    78,
+    380,
     687,
     marsTexture,
     0,
@@ -327,9 +329,9 @@ const jupiterTexture = new THREE.MeshStandardMaterial({
     emissiveIntensity: 10,
 });
 const jupiter = new Planet(
-    20,
+    10.97,
     0xffd700,
-    268 / 2,
+    268,
     4333,
     jupiterTexture,
     0,
@@ -347,9 +349,9 @@ const saturnTexture = new THREE.MeshStandardMaterial({
     emissiveIntensity: 10,
 });
 const saturn = new Planet(
-    9,
+    9.14,
     0xf5deb3,
-    492 / 2,
+    492,
     10759,
     saturnTexture,
     0,
@@ -360,7 +362,7 @@ const saturn = new Planet(
 planets.push(saturn);
 
 
-const ringGeometry = new THREE.TorusGeometry(7, 1, 64, 64);
+const ringGeometry = new THREE.TorusGeometry(8, 0.5, 32, 32);
 const ringMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
 const ring = new THREE.Mesh(ringGeometry, ringMaterial);
 ring.rotation.x = Math.PI / 2;
@@ -378,9 +380,9 @@ const uranusTexture = new THREE.MeshStandardMaterial({
     emissiveIntensity: 30,
 });
 const uranus = new Planet(
-    7,
+    3.98,
     0xadd8e6,
-    990 / 2,
+    990,
     30687,
     uranusTexture,
     0,
@@ -398,7 +400,7 @@ const neptuneTexture = new THREE.MeshStandardMaterial({
     emissiveIntensity: 30,
 });
 const neptune = new Planet(
-    6,
+    3.86,
     0x00008b,
     1896 / 2,
     60190,

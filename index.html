@@ -44,6 +44,8 @@
         import * as THREE from 'three';
         import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/controls/OrbitControls.js';
 
+        //adding textures to planet
+        const loader = new THREE.TextureLoader();
 
         // minimal state //
         let time = 30;
@@ -85,7 +87,7 @@
         const pointer = new THREE.Vector2(); //mouse pos
 
         const sun = new THREE.Mesh (
-        new THREE.SphereGeometry(0.8), new THREE.MeshBasicMaterial({color: 0xFFDA21}));
+        new THREE.SphereGeometry(0.8), new THREE.MeshBasicMaterial({ map: loader.load("/textures/suntexture.jpg") }));
         scene.add(sun); 
 
         //add some vfx
@@ -93,18 +95,18 @@
         sunGlow.position.set(0,0,0);
         scene.add(sunGlow);
     
-        const mercury = makePlanet("mercury", 0.2, {color: 0xC0C0C0}, 2);
+        const mercury = makePlanet("mercury", 0.2, "/textures/mercurytexture.jpg", 2);
         makeRing(1.5);
 
-        const venus = makePlanet("venus", 0.3, {color: 0xDBB48A}, 3);
+        const venus = makePlanet("venus", 0.3, "/textures/venustexture.jpg", 3);
         makeRing(2.5);
 
-        const earth = makePlanet("earth", 0.3, {color: 0x4592B0}, 5);
+        const earth = makePlanet("earth", 0.3, "/textures/earthtexture.jpg", 5);
         makeRing(4);
 
-        const moon = makePlanet("moon", 0.1, {color: 0xEDEDED}, 5.4);
+        const moon = makePlanet("moon", 0.1, "/textures/mercurytexture.jpg", 5.4);
 
-        const mars = makePlanet("mars", 0.2, {color: 0xA12C02}, 6);
+        const mars = makePlanet("mars", 0.2, "/textures/marstexture.jpg", 6);
         makeRing(6);
 
         
@@ -154,9 +156,9 @@
 
         loop(); //call funct
 
-function makePlanet(name, size, color, distance){
+function makePlanet(name, size, texture, distance){
         const object = new THREE.Mesh (
-        new THREE.SphereGeometry(size), new THREE.MeshStandardMaterial(color));
+        new THREE.SphereGeometry(size), new THREE.MeshStandardMaterial( { map: loader.load(texture) } ));
         object.position.x = distance;
         //distance from the sun /\
         scene.add(object);
@@ -181,6 +183,7 @@ function makeRing(distance) { //distance from the sun
     scene.add(orbitRing);
     return orbitRing;
 }
+
         
         </script>
 </body>

@@ -33,7 +33,14 @@
     }
 </script>
 <body>
-<div id="ui"> ⏱<span id="t">30.0</span>s. ⭐<span id="s">0</span></div>
+<div id="ui"> ⏱<span id="t">30.0</span>s.
+            ⭐<span id="s">0</span><br>
+            ✖️<span id="m">0</span><br>
+            🔥<span id="st">0</span><br>
+            ✨<span id="c">1</span> x
+
+
+</div>
 
     <script type = "module">
         import * as THREE from 'three';
@@ -167,14 +174,20 @@
     const  pTime = new THREE.Vector2();// a 2D point to hold the mosue /touch pos
 
     //update UI reset the score anf put the game at the start 
-
     const elementT = document.getElementById('t'); //time
     const elementS = document.getElementById('s'); //stars/score
+    const elementX = document.getElementById('m'); //misses
+    const elementM = document.getElementById('st'); //streaks
+    const elementC = document.getElementById('c'); //combo 
+
 
     function updateUI(){
         
         elementT.textContent = time.toFixed(1); //fixes to 1 decimal place
         elementS.textContent = score;
+        elementX.textContent = misses;
+        elementM.textContent = streaks;
+        elementC.textContent = comboMultiplier;
         
     }
     //input function
@@ -212,10 +225,22 @@
 
           //if it hits happened I wil give 1 score
             if(hit != null) {
-                score++;
+
+                streaks = streaks + 1; //for every hit incraeses by 1
+
+                comboMultiplier = Math.min(1+ Math.floor(streaks/5), 5); //every 5 hits goes up to 1 and max 5, returns smaller value and floor rounds down
+               
+                score = score + comboMultiplier;
                 hit.object.position.y = -0.8; //underground
                  updateUI();
-            }    
+            } 
+            else{
+
+                misses = misses + 1;
+                streaks = 0;
+                comboMultiplier = 1;
+                 updateUI();
+            }   
 
     }//End of onPointer
 
@@ -296,7 +321,7 @@
         //7-end of game 
         if(time === 0){
             running = false;
-            alert('Game Over! ' + score); //show score
+            alert('Game Over! ' + 'Your final score is: '+ score + ' Your final streak is: '+ streaks +' Total misses: '+ misses + ' Highest Combo is: '+ comboMultiplier + 'x '); //show score
         }
         updateUI();
 

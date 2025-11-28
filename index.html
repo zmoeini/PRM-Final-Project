@@ -50,7 +50,7 @@
         let running = true;
         let misses = 0; 
         let streak = 0; 
-        let combo = 0;
+        let combo = 1;
         //pop up state
         let mode = "casual";
         let popUpTime = 0; 
@@ -165,10 +165,8 @@
                 return; // don't count if mole still rising
             }
             streak++; 
-            combo = Math.min(Math.floor(1+streak/5,5)) //max 5x combo, floored.
-            if (combo > 0){
-                score += 1 * combo;
-            } else { score ++;}
+            combo = Math.min(Math.floor(1 + streak / 5), 5); //max 5x combo 
+            score += 1 * combo;
             resetMole(m);   //reset
         }
 
@@ -212,8 +210,8 @@
             last = t; //set last tick
 
             if (running) {  //loop
-                time -= dt; //let timer run
-                if (time < 0) { //game over case
+                time = Math.max(time - dt, 0); //set timer run, clamp at 0)
+                if (time == 0) { //game over case
                     running = false; 
                     alert("Game Over!");
                 }
@@ -257,7 +255,7 @@
                             let randomIndex = Math.floor(Math.random() * readyMoles.length) //get random moles that are down.
                             let randomMole = readyMoles[randomIndex];
                             popUpMole(randomMole); //if mole has been down longer than popUpTime - pop it up.
-                            m.data.cooldown = 0;
+                            randomMole.data.cooldown = 0; //reset cooldown of this random mole.
                         }
                     }
                 }

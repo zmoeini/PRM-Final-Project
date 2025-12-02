@@ -104,18 +104,19 @@
         scene.add(dl);
 
         // Ground plane
-        const ground = new THREE.PlaneGeometry(10, 8);
+        const ground = new THREE.PlaneGeometry(12, 12);
         const material = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
         ground.rotateX(-Math.PI / 2);
         const groundMesh = new THREE.Mesh(ground, material);
         scene.add(groundMesh);
 
-        // Hole positions (x, z)
-        const holePositions = [
-            new THREE.Vector3(-3, 0, 0),
-            new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(3, 0, 0)
-        ];
+        // Hole positions (x, z) for 3x3 grid
+        const holePositions = [];
+        for(let z = -2.5; z <= 2.5; z += 2.5) {
+            for(let x = -3.2; x <= 3.2; x += 3.2) {
+                holePositions.push(new THREE.Vector3(x, 0, z));
+            }
+        }
 
         // Create a torus ring for each hole position
         const ringShape = new THREE.TorusGeometry(0.7, 0.12, 12, 32);
@@ -145,15 +146,32 @@
         });
 
         let popUpTimeClassic = 900; // ms
-        let popUpTimeChaos = 450; // ms (faster)
+        let popUpTimeChaos = 450; // ms
         let popUpTime = popUpTimeClassic;
         let sincePopUp = 0; // ms since last pop up
 
         // Animation timing parameters (seconds)
         let upDuration = 0.5;
         let downDuration = 0.5;
-        let holdDuration = 0.012;
-        const moleTopY = 0.9;
+        let holdDurationMin = 0.012; // minimum hold
+        let holdDurationMax = 0.5; // maximum hold
+        const moleTopY = 1.4;
+
+        // Helper: schedule next popup for a mole
+        function scheduleNextPop(mole) {
+            // Random delay between 0.5s and 2s
+            mole.userData.nextPop = 500 + Math.random() * 1500;
+            mole.userData.time = -1; // -1 means waiting
+            mole.position.y = -1;
+            // Assign a random hold duration for next pop (between current and 0.5s)
+            mole.userData.holdDuration = holdDurationMin + Math.random() * (holdDurationMax - holdDurationMin);
+        }
+        moles.forEach(scheduleNextPop);
+
+        // Start popup for given mole
+        function startPopup(mole) {
+            mole.userData.time = 0; // start animation
+        }
 
         function hideMole(m) {
             m.position.y = -1;
@@ -269,15 +287,6 @@
             return arr;
         }
 
-        // Start popup for given mole index
-        function startPopup(idx) {
-            const m = moles[idx];
-            // only start if currently hidden
-            if (m.position.y <= -0.9) {
-                m.userData.time = 0; // start animation
-            }
-        }
-
         // Game loop: updates timing, mole animation, and rendering
         let last = performance.now();
         updateUI();
@@ -289,46 +298,36 @@
 
             if (running && time > 0) {
                 time = Math.max(0, time - delta);
-                sincePopUp += delta * 1000;
 
-                // Time to start a popup cycle
-                if (sincePopUp >= popUpTime) {
-                    // Determine how many to spawn
-                    const mode = modeSelect.value;
-                    let spawnCount = 1;
-                    if (mode === 'Chaos' && Math.random() < 0.35) spawnCount = 2; // sometimes spawn two
-                    const hidden = hiddenIndices();
-                    // choose up to spawnCount distinct hidden indices
-                    for (let s = 0; s < spawnCount && hidden.length > 0; s++) {
-                        const idx = hidden.splice(Math.floor(Math.random() * hidden.length), 1)[0];
-                        startPopup(idx);
-                    }
-                    sincePopUp = 0;
-                }
-
-                // Animate each mole independently
                 moles.forEach(m => {
-                    const userData = m.userData;
-                    userData.time = (userData.time || 0) + delta; // seconds
+                    // If waiting, count down to next pop
+                    if (m.userData.time === -1) {
+                        m.userData.nextPop -= delta * 1000;
+                        if (m.userData.nextPop <= 0) {
+                            startPopup(m);
+                        }
+                        return;
+                    }
 
-                    const totalCycle = upDuration + holdDuration + downDuration;
+                    // Animate popup
+                    m.userData.time += delta;
+                    // Use per-mole hold duration
+                    const thisHold = m.userData.holdDuration || holdDurationMin;
+                    const totalCycle = upDuration + thisHold + downDuration;
 
-                    if (userData.time > 0 && userData.time < upDuration) {
-                        const t = userData.time / upDuration;
+                    if (m.userData.time < upDuration) {
+                        const t = m.userData.time / upDuration;
                         const eased = THREE.MathUtils.smoothstep(t, 0, 1);
                         m.position.y = -1 + eased * moleTopY;
-                    } else if (userData.time >= upDuration && userData.time < upDuration + holdDuration) {
+                    } else if (m.userData.time < upDuration + thisHold) {
                         m.position.y = -1 + moleTopY;
-                    } else if (userData.time >= upDuration + holdDuration && userData.time < totalCycle) {
-                        const t = (userData.time - upDuration - holdDuration) / downDuration;
+                    } else if (m.userData.time < totalCycle) {
+                        const t = (m.userData.time - upDuration - thisHold) / downDuration;
                         const eased = THREE.MathUtils.smoothstep(t, 0, 1);
                         m.position.y = -1 + moleTopY * (1 - eased);
-                    } else if (userData.time >= totalCycle) {
-                        // finished cycle: hide and reset
-                        hideMole(m);
                     } else {
-                        // inactive
-                        m.position.y = -1;
+                        // Hide and schedule next pop (assign new hold duration)
+                        scheduleNextPop(m);
                     }
                 });
 

@@ -24,8 +24,11 @@
     }
      #info {
         position: absolute;
-        top: 10px;
-        left: 10px;
+        top: 100px;
+        left: 800px;
+        color: white;
+        font-size: 50px;
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
     }
 
 </style>
@@ -95,18 +98,18 @@
         sunGlow.position.set(0,0,0);
         scene.add(sunGlow);
     
-        const mercury = makePlanet("mercury", 0.2, "/textures/mercurytexture.jpg", 2);
+        const mercury = makePlanet("mercury", 0.2, "textures/mercurytexture.jpg", 2);
         makeRing(1.5);
 
-        const venus = makePlanet("venus", 0.3, "/textures/venustexture.jpg", 3);
+        const venus = makePlanet("venus", 0.3, "textures/venustexture.jpg", 3);
         makeRing(2.5);
 
-        const earth = makePlanet("earth", 0.3, "/textures/earthtexture.jpg", 5);
+        const earth = makePlanet("earth", 0.3, "textures/earthtexture.jpg", 5);
         makeRing(4);
 
-        const moon = makePlanet("moon", 0.1, "/textures/mercurytexture.jpg", 5.4);
+        const moon = makePlanet("moon", 0.1, "textures/mercurytexture.jpg", 5.4);
 
-        const mars = makePlanet("mars", 0.2, "/textures/marstexture.jpg", 6);
+        const mars = makePlanet("mars", 0.2, "textures/marstexture.jpg", 6);
         makeRing(6);
 
         
@@ -119,16 +122,18 @@
          pointer.y = -(event.clientY / innerHeight)*2 + 1;
          raycaster.setFromCamera(pointer, camera);
 
-         const hit = raycaster.intersectObjects([sun,venus,earth,mars,moon])[0];
+         const hit = raycaster.intersectObjects([sun, mercury, venus, earth, mars, moon])[0];
 
             if (hit) document.getElementById('info').innerText = "You viewed: " + 
-                (hit.object === sun ? "the Sun" :
-                hit.object === venus ? "Venus" :
-                hit.object === earth ? "Earth" :
-                hit.object === mars ? "Mars" :
-                "the Moon");
+                (hit.object === sun ? "the Sun, around which we orbit" :
+                hit.object === mercury ? "Mercury, the Swift Planet" :
+                hit.object === venus ? "Venus, the Evening Star" :
+                hit.object === earth ? "Earth, the Blue Planet" :
+                hit.object === mars ? "Mars, the Red Planet" :
+                "the Moon, our loyal friend");
             
-        });
+        }
+    );
 
         //Anims
         function loop(){

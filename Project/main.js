@@ -1,7 +1,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-import { RGBELoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/RGBELoader.js'; //https://www.youtube.com/watch?v=zVDnKVG-9mk
+import { RGBELoader } from 'RGBELoader'; //https://www.youtube.com/watch?v=zVDnKVG-9mk
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000000);
@@ -88,7 +88,7 @@ class Planet {
     duration; //duration
     currentPo = 0;
     curvature = 1.15;
-    //clock = new THREE.Clock();
+    clock = new THREE.Clock();
     lastTime = performance.now();
     trailPoints = [];
     trail = new THREE.Line(
@@ -184,7 +184,7 @@ class Planet {
 
 
 //light for the environment so its not too dark 
-const ambient = new THREE.AmbientLight(0xffffff, 0);
+const ambient = new THREE.AmbientLight(0xffffff, 0.3);
 scene.add(ambient);
 
 

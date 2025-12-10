@@ -58,6 +58,7 @@
         const moles = [];
 
         let selectedMole = null;
+        let secondMole = null;
 
         // grid for mole and rings placement x,z pos
         const gameArea=
@@ -130,7 +131,7 @@
         }
 
 
-    let popUpTime = 1500;
+    let popUpTime = 900;
     //we plan to popup the mole about every 900milisecs (1sec)
     let sincePopUp = 0;
     //tracks how long from last popup
@@ -148,6 +149,29 @@
         selectedMole = moles [chooseMole];
 
         selectedMole.userData.t = 0; //reset anim timer 
+
+        //30% chance that a 2nd mole will popup for choas mode
+        if(Math.random() <= 0.3){
+            //cycles thorugh all the moles to have a 2nd popup
+            let secondChooseMole = Math.floor(Math.random()* moles.length);
+
+            //while loop so the 1st and 2nd mole are different
+            while(secondChooseMole === chooseMole){
+                secondChooseMole = Math.floor(Math.random()* moles.length);
+            }
+            secondMole = moles[secondChooseMole]; 
+
+            secondMole.userData.t = 0; //reset anim timer 
+
+        }
+
+        else{
+            secondMole = null; //no 2nd mole
+        }
+
+
+
+
         sincePopUp = 0; //reset timer after popup
 
 
@@ -311,13 +335,46 @@
         //if whenthe mole is done up n down (t<1) 
         // we reset the mole pos underground
         selectedMole.position.y = (userData.t < 1) ? y : -0.8;
-        if(userData.t >= 1) PopUp();
         }
+        
+
+
+        if (secondMole != null){
+
+        const userData2 = secondMole.userData; //get data from selected mole
+        userData2.t = (userData2.t||0) + dt * 1.8; //time since popup in seconds
+
+
+        //3-determine whether the mole si going up or down
+        const up2 = userData2.t < 0.5; 
+        //if more than .5sec mole is going up
+        //if more than .5sec mole is going down
+
+
+        //4-normalize time for anim
+        const t2 = up2 ? userData2.t / 0.5 : (userData2.t - 0.5) / 0.5;
+        //when going up t goes from 0 to 1 in 0.5sec
+        //when going down t goes from 0 to 1 in 0.5sec
+        //it makes anim simpler 
+
+        //5-calculate y pos
+        const y2 = up2 ? THREE.MathUtils.smoothstep(t2,0,1) * 0.9 : 0.9 *(1-THREE.MathUtils.smoothstep(t2,0,1));
+        //smoothstep moves from 0 to 1 
+        //when going up y goes from 0 to 0.9
+        //everything smoother
+
+        //6-apply new pos or rest
+        //if whenthe mole is done up n down (t<1) 
+        // we reset the mole pos underground
+        secondMole.position.y = (userData2.t < 1) ? y2 : -0.8;
+
+        }
+    
 
         //7-end of game 
         if(time === 0){
             running = false;
-            alert('Game Over! ' + 'Your final score is: '+ score + ' Your final streak is: '+ streaks +' Total misses: '+ misses + ' Highest Combo is: '+ comboMultiplier + 'x '); //show score
+            alert('Game Over!...You endured the choas and relished in it... ' + 'Your final score is: '+ score + ' Your final streak is: '+ streaks +' Total misses: '+ misses + ' Highest Combo is: '+ comboMultiplier + 'x '); //show score
         }
         updateUI();
 

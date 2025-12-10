@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Whack a Mole</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.slim.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+      <link rel="stylesheet" href="style.css">
 </head>
 <style>
     html,body{
@@ -33,15 +43,28 @@
     }
 </script>
 <body>
+    <!--Timer,Stars,Misses,Streaks,Combo, and Pause UI-->
+
 <div id="ui"> ⏱<span id="t">30.0</span>s.
             ⭐<span id="s">0</span><br>
             ✖️<span id="m">0</span><br>
             🔥<span id="st">0</span><br>
-            ✨<span id="c">1</span> x
+            ✨<span id="c">1</span> x <br>
+</div>
+
+<div id = "pauseAndBack" style="position:fixed; top: 10px; right: 10px; ">
+            <!--Back button-->
+             <a href="MainMenu.html"><button class="btn btn-dark btn-xs" style="font-size: 18px;">Back to MainMenu</button></a> <br> <br>
+
+             <!--pause-->
+            ⏸️<span id="pauseTxt" style="color:white; font-size: bold; ">▶ PRESS P to PAUSE/RESUME</span> 
+
 
 
 </div>
 
+<div id="fade" style="position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color:rgba(0, 0, 0, 0.7); display: none;" ></div>
+</div>
     <script type = "module">
         import * as THREE from 'three';
 
@@ -58,6 +81,27 @@
         const moles = [];
 
         let selectedMole = null;
+
+        let paused = false;
+
+        function pauseGame(){
+            paused = !paused;
+
+            const pauseTxt = document.getElementById('pauseTxt');
+            const fade = document.getElementById('fade');
+
+            if(paused){
+
+                pauseTxt.style.display = 'inline'; //pause text shows
+                fade.style.display = 'block';
+
+            }
+            else{
+
+                pauseTxt.style.display = 'none';
+                fade.style.display = 'none';
+            }  
+        }
 
         // grid for mole and rings placement x,z pos
         const gameArea=
@@ -189,8 +233,8 @@
     //input function
     function onPointer(e)
     {
-        //if the game is active 
-        if(!running) return; //break the function --stop the function
+        //if the game is active and the game is paused 
+        if(!running || paused === true) return; //break the function --stop the function
 
         //ttake the mouse /touch pos and convert to NDC
         pTime.x = (e.clientX /innerWidth)*2 -1;
@@ -242,6 +286,13 @@
 
     addEventListener('pointerdown', onPointer); //event for mouse click or input
 
+    addEventListener('keydown', function(e){ //event for pause game input p
+
+        if(e.key === 'P' || e.key === 'p'){
+            pauseGame(); //calls the pause function
+        }
+    })
+
     //LOOP
     //get the last i need delta time for my frames 
     let last = performance.now();
@@ -260,8 +311,8 @@
     //divide by 1000 to get seconds
     //Math.min(....,.05)
 
-    //running - game is active and time + value (it is not game over)
-    if(running && time > 0)
+    //running - game is active and time + value and if its notpaused (it is not game over)
+    if(running && time > 0 && !paused)
     {
         time = Math.max(time - dt, 0); //reduce the time base don the frames passed
         //popup 

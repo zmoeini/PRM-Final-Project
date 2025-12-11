@@ -13,17 +13,8 @@
         overflow: hidden;
         font:14px system-ui;
     }
-    #ui{
-        position:fixed;
-        left:10px;
-        top:10px;
-        color:white;
-        background: black;
-        padding: 6px 10px;
-        border-radius:8px ;
-    }
      #info {
-        position: absolute;
+        position: absolute; 
         top: 100px;
         left: 800px;
         color: white;
@@ -32,6 +23,7 @@
     }
 
 </style>
+//BRING IN 3JS
 <script type="importmap">
     {
         "imports":
@@ -44,29 +36,32 @@
      <div id="info">Click a celestial body to learn more!</div>
 
      <script type="module">
+        //bring in 3js
         import * as THREE from 'three';
+        //mouse actions import
         import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.157.0/examples/jsm/controls/OrbitControls.js';
 
         //adding textures to planet
         const loader = new THREE.TextureLoader();
 
-        // minimal state //
-        let time = 30;
-        let score = 0;
-        let running = true;
 
-        // ---- three---- setup
+        //SETUP 3JS SCENE
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0b0d12);
+
+        //SETUP CAMERA
         const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 100);
         camera.position.set(0,6,8);
         camera.lookAt(0,0,0);
 
+        //SETUP RENDERER
         const renderer = new THREE.WebGLRenderer({antialias:true});
         renderer.setSize(innerWidth, innerHeight);
-        // where we should show the render in html in which element --- add to body 
+
+        // RENDER THE HTML IN BODY
         document.body.appendChild(renderer.domElement);
-        // resize ---Event 
+
+        // RESIVE WINDOW EVENT
         addEventListener('resize',() =>
             {
                 camera.aspect= innerWidth/innerHeight;
@@ -75,31 +70,33 @@
             }
         );
 
-        // HemisphereLight 
+        //SET UP GLOBAL LIGHT
         const light = new THREE.HemisphereLight(0x9ecfff,0x0b0d12,0.9);
         scene.add(light);
         const dl = new THREE.DirectionalLight(0xffffff,0.7);
         dl.position.set(3,6,4);
         scene.add(dl);
 
-        //Controls
+        //CONTROLS VAR
         const controls = new OrbitControls(camera, renderer.domElement);
 
-        //Raycast + pointer
+        //RAYCAST + POINTER VAR
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2(); //mouse pos
 
+        //SUN
         const sun = new THREE.Mesh (
-        new THREE.SphereGeometry(0.8), new THREE.MeshBasicMaterial({ map: loader.load("/textures/suntexture.jpg") }));
+        new THREE.SphereGeometry(0.8), new THREE.MeshBasicMaterial({ map: loader.load("/textures/suntexture.jpg") })); //i brought in textures!
         scene.add(sun); 
 
-        //add some vfx
+        //add some vfx to our sun with a glow
         const sunGlow = new THREE.PointLight(0xFFDA21, 30, 200);
         sunGlow.position.set(0,0,0);
         scene.add(sunGlow);
     
+        //make the rest of the planets
         const mercury = makePlanet("mercury", 0.2, "textures/mercurytexture.jpg", 2);
-        makeRing(1.5);
+        makeRing(1.5); //this is how tight it orbits around the sun
 
         const venus = makePlanet("venus", 0.3, "textures/venustexture.jpg", 3);
         makeRing(2.5);
@@ -108,14 +105,13 @@
         makeRing(4);
 
         const moon = makePlanet("moon", 0.1, "textures/mercurytexture.jpg", 5.4);
+        //no make ring bc i manually make it spin around the earth without a white circle
 
         const mars = makePlanet("mars", 0.2, "textures/marstexture.jpg", 6);
         makeRing(6);
-
-        
       
     
-        //click on celestial object
+        //click on celestial object event
         addEventListener('pointerdown', (event)=>
     {
          pointer.x = (event.clientX / innerWidth)*2 -1;
@@ -131,7 +127,7 @@
                 hit.object === earth ? "Earth, the Blue Planet" :
                 hit.object === mars ? "Mars, the Red Planet" :
                 "the Moon, our loyal friend");
-            
+            //hardcoded it to have different nice descriptions
         }
     );
 
@@ -139,7 +135,7 @@
         function loop(){
             requestAnimationFrame(loop);
 
-            mercury.position.x= 1.5 * Math.cos(Date.now()*0.001);
+            mercury.position.x= 1.5 * Math.cos(Date.now()*0.001); //circular equation
             mercury.position.z = 1.5 * Math.sin(Date.now() * 0.001);
 
             venus.position.x= 2.5 * Math.cos(Date.now()*0.001);
@@ -163,7 +159,7 @@
 
 function makePlanet(name, size, texture, distance){
         const object = new THREE.Mesh (
-        new THREE.SphereGeometry(size), new THREE.MeshStandardMaterial( { map: loader.load(texture) } ));
+        new THREE.SphereGeometry(size), new THREE.MeshStandardMaterial( { map: loader.load(texture) } )); //standard so interacts with light
         object.position.x = distance;
         //distance from the sun /\
         scene.add(object);

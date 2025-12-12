@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whack a Mole</title>
+    <title>Whack a Mole Choas</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.slim.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+      <link rel="stylesheet" href="style.css">
 </head>
 <style>
     html,body{
@@ -42,6 +52,20 @@
 
 </div>
 
+<div id = "pauseAndBack" style="position:fixed; top: 10px; right: 10px; ">
+            <!--Back button-->
+             <a href="MainMenu.html"><button class="btn btn-dark btn-xs" style="font-size: 18px;">Back to MainMenu</button></a> <br> <br>
+
+             <!--pause-->
+            ⏸️<span id="pauseTxt" style="color:white; font-weight: bold; ">▶ PRESS P to PAUSE/RESUME</span> 
+
+
+
+</div>
+
+<div id="fade" style="position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color:rgba(0, 0, 0, 0.7); display: none;" ></div>
+</div>
+
     <script type = "module">
         import * as THREE from 'three';
 
@@ -60,7 +84,45 @@
         let selectedMole = null;
         let secondMole = null;
 
-        // grid for mole and rings placement x,z pos
+        //load textures
+        const textureLoader = new THREE.TextureLoader();
+
+        //mole texture
+        const moleTexture = textureLoader.load("Images/image-removebg-preview.png");
+        //ground texture
+        const groundTexture = textureLoader.load("Images/ground-grass.png");
+        //ring texture
+        const ringTexture = textureLoader.load("Images/dirt.jpg");
+        //bg texture
+        const bgTexture = textureLoader.load("Images/volcanobg.jpg");
+
+        //adding sound effects
+        const hitSound = new Audio("SoundEffects/hit-modulated-fx.wav");
+        const missSound = new Audio("SoundEffects/cancelmiss-chime.wav");
+        const gameOverSound = new Audio("SoundEffects/gameover-sfx.wav");
+
+        let paused = false;
+
+        function pauseGame(){
+            paused = !paused;
+
+            const pauseTxt = document.getElementById('pauseTxt');
+            const fade = document.getElementById('fade');
+
+            if(paused){
+
+                pauseTxt.style.display = 'inline'; //pause text shows
+                fade.style.display = 'block';
+
+            }
+            else{
+
+                pauseTxt.style.display = 'none';
+                fade.style.display = 'none';
+            }  
+        }
+
+        // grid for mole and rings placement x,z pos (-2 left,0 center, 2 right) array of arrays
         const gameArea=
         [
             [-2,0], [0,0], [2,0],[-2,-2], [0,-2], [2,-2],[-2,2], [0,2], [2,2],
@@ -69,7 +131,9 @@
 
         //WEEK1--three--setup
         const scene = new THREE.Scene(); //create scene
-        scene.background = new THREE.Color(0x0b0d12); //adding bg color to scene
+
+        scene.background = bgTexture; //adding bg texture to scene
+
         const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight,0.1,100); //create perspective cam
         camera.position.set(0,6,8); //set position
         camera.lookAt(0,0,0); //looks at the center of the screen/scene
@@ -97,7 +161,7 @@
     scene.add(dLight); //adds to scene
 
     const groundShape = new THREE.PlaneGeometry(10,8); //creates a plane 
-    const material = new THREE.MeshStandardMaterial({color:0x0f172a, roughness:0.9}); //adds mat color and roughness
+    const material = new THREE.MeshStandardMaterial({color:0x808080, roughness:0.9, map:groundTexture}); //adds mat color and roughness
     const ground = new THREE.Mesh(groundShape,material); //create the mesh
     ground.rotation.x = -Math.PI/2; //rotates to show up on the ground
     scene.add(ground); //add to scnene
@@ -107,15 +171,16 @@
     // 0.7 ring size (outer radius)
     // 0.12 = ring thickness(tube radius)
     //32 how many segments around the big circle
-    const ringMaterial = new THREE.MeshStandardMaterial({color:0x3b4561});
+    const ringMaterial = new THREE.MeshStandardMaterial({color:0x808080, map:ringTexture});
 
       //mole sphere
     const moleShape = new THREE.SphereGeometry(0.55,16,14); //craete sphere radius -- width --height
-    const moleMaterial = new THREE.MeshStandardMaterial({color:0xf97316});
+    const moleMaterial = new THREE.MeshStandardMaterial({color:0xf97316, map:moleTexture});
     
+    //loop to create rings and moles based on gameArea grid 
         for(let i = 0;i < gameArea.length;i++){
-            const x = gameArea[i][0]; //x pos
-            const z = gameArea[i][1]; //z pos
+            const x = gameArea[i][0]; //[0]x pos based on grid number
+            const z = gameArea[i][1]; //[1]z pos based on grid number
 
             const ring = new THREE.Mesh(ringShape,ringMaterial);
             ring.rotation.x = Math.PI/2; //ring flat
@@ -123,9 +188,11 @@
             scene.add(ring);
             rings.push(ring); //stores ring inside the array
 
-            const mole = new THREE.Mesh(moleShape,moleMaterial);
+            const mole = new THREE.Mesh(moleShape,moleMaterial.clone()); //clone to have seperate mat and glow effect
             mole.position.set(x,-0.8, z); //hidden (underground)
+            mole.rotation.y = -Math.PI /2; // 90 degree to face toward player (the texture)
             mole.userData.t = 0;
+            mole.userData.hitGlow = 0; //glow length
             scene.add(mole);
             moles.push(mole); //stores mole inside the array
         }
@@ -146,7 +213,7 @@
         //rnd popup of 1 mole
         const chooseMole = Math.floor(Math.random()* moles.length);
 
-        selectedMole = moles [chooseMole];
+        selectedMole = moles [chooseMole]; //have selected = to the mole choosen from array 
 
         selectedMole.userData.t = 0; //reset anim timer 
 
@@ -159,7 +226,7 @@
             while(secondChooseMole === chooseMole){
                 secondChooseMole = Math.floor(Math.random()* moles.length);
             }
-            secondMole = moles[secondChooseMole]; 
+            secondMole = moles[secondChooseMole]; //have selected = to the mole choosen from array 
 
             secondMole.userData.t = 0; //reset anim timer 
 
@@ -170,13 +237,8 @@
         }
 
 
-
-
         sincePopUp = 0; //reset timer after popup
 
-
-
-      
     }
 
     PopUp(); //popup once
@@ -213,8 +275,8 @@
     //input function
     function onPointer(e)
     {
-        //if the game is active 
-        if(!running) return; //break the function --stop the function
+        //if the game is active and the game is paused 
+        if(!running || paused === true) return; //break the function --stop the function
 
         //ttake the mouse /touch pos and convert to NDC
         pTime.x = (e.clientX /innerWidth)*2 -1;
@@ -230,11 +292,12 @@
         //stores hit
         let hit = null; 
 
-        //loops to find popped up mole
+        //loops to check all hits from raycast (near to far)
         for(let i = 0; i< hitAll.length;i++){
 
-            if(hitAll[i].object.position.y > -0.79){ 
-                hit = hitAll[i];
+             //checks if moles are above ground from array of hits
+            if(hitAll[i].object.position.y > -0.79){ //0.79 as a safe zone in case the floast number is no exact
+                hit = hitAll[i]; //stores the hit info
                 break;
             }
 
@@ -246,17 +309,26 @@
           //if it hits happened I wil give 1 score
             if(hit != null) {
 
+                hitSound.currentTime = 0; //resets sound for every hit
+                hitSound.play(); //plays sound effect
+
                 streaks = streaks + 1; //for every hit incraeses by 1
 
                 comboMultiplier = Math.min(1+ Math.floor(streaks/5), 5); //every 5 hits goes up to 1 and max 5, returns smaller value and floor rounds down
                
                 score = score + comboMultiplier;
+
+                hit.object.userData.hitGlow = 0.25 //setting glow time when hit
+
                 hit.object.position.y = -0.8; //underground
                  updateUI();
             } 
             else{
+                
+                missSound.currentTime = 0; //resets sound for every miss
+                missSound.play(); //plays sound effect
 
-                misses = misses + 1;
+                misses = misses + 1; 
                 streaks = 0;
                 comboMultiplier = 1;
                  updateUI();
@@ -265,6 +337,13 @@
     }//End of onPointer
 
     addEventListener('pointerdown', onPointer); //event for mouse click or input
+
+     addEventListener('keydown', function(e){ //event for pause game input p
+
+        if(e.key === 'P' || e.key === 'p'){
+            pauseGame(); //calls the pause function
+        }
+    })
 
     //LOOP
     //get the last i need delta time for my frames 
@@ -284,8 +363,8 @@
     //divide by 1000 to get seconds
     //Math.min(....,.05)
 
-    //running - game is active and time + value (it is not game over)
-    if(running && time > 0)
+     //running - game is active and time + value and if its notpaused (it is not game over)
+    if(running && time > 0 && !paused)
     {
         time = Math.max(time - dt, 0); //reduce the time base don the frames passed
         //popup 
@@ -338,7 +417,6 @@
         }
         
 
-
         if (secondMole != null){
 
         const userData2 = secondMole.userData; //get data from selected mole
@@ -369,10 +447,35 @@
         secondMole.position.y = (userData2.t < 1) ? y2 : -0.8;
 
         }
+
+        //glow loop check every mole and updates glow per frame  
+        for(let i = 0; i < moles.length; i++){
+
+            const mole = moles[i]; //get mole from array
+
+            //checks to see if mole has glow time left
+            if (mole.userData.hitGlow > 0){
+
+                mole.userData.hitGlow -=dt; //-fades over time using delta time(smoother)
+
+                const intensity = mole.userData.hitGlow * 2; //calculates intensity of glow based on time left(multiplies by 2 to make it brighter when running)
+
+                mole.material.emissive.setRGB(intensity, intensity * 0.4,0); //sets color based on intensity and makes it orange glow
+            }
+            else{
+
+                mole.material.emissive.setRGB(0,0,0); // no glow if not hit
+            }
+
+        }
     
 
-        //7-end of game 
+        //7-end of game and when timer reaches 0
         if(time === 0){
+
+            gameOverSound.currentTime = 0; //resets sound for game over
+            gameOverSound.play(); //plays game over sound effect
+
             running = false;
             alert('Game Over!...You endured the choas and relished in it... ' + 'Your final score is: '+ score + ' Your final streak is: '+ streaks +' Total misses: '+ misses + ' Highest Combo is: '+ comboMultiplier + 'x '); //show score
         }

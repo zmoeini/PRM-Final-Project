@@ -97,7 +97,7 @@
       sun.castShadow = false; // Sun does NOT cast shadows 
       sun.receiveShadow = false;// Sun doesnt have to receive shadows because is the object that's emiting the light 
       scene.add(sun);
-      sun.add(sunLight);
+      sun.add(sunLight);// SUNLIGHT IS A POINT LIGHT 
       // Attach the point light to the sun mesh so the light moves with the sun (here the sun is stationary)
        // Fixed 2 now the sunlight is attached to the sun 2025-12-12
 
@@ -222,6 +222,8 @@
 
       /* ------------------- ANIMATION -------------------- */
       const clock = new THREE.Clock(); // Fixed 3 provides elapsed time with consistent pausing and resetting Emmanuel L 2025-12-12
+
+      // IS BETTER TO NOT USE DATE.NOW() BECAUSE THE TRANSITIONS MIGHT SEEM INCONSISTENT 
 
       function animate() {
         requestAnimationFrame(animate); // ask browser to call animate again for next frame

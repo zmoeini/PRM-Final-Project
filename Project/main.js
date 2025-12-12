@@ -1,7 +1,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-import { RGBELoader } from 'RGBELoader'; //https://www.youtube.com/watch?v=zVDnKVG-9mk
+import { RGBELoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/RGBELoader.js'; //https://www.youtube.com/watch?v=zVDnKVG-9mk
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000000);
@@ -235,7 +235,7 @@ const mercuryTexture = new THREE.MeshStandardMaterial({
     emissiveIntensity: 30,
 });
 const mercury = new Planet(
-    0.383,
+    2, // 0.383
     0xbfbfbf,
     200,
     88,
@@ -255,7 +255,7 @@ const venusTexture = new THREE.MeshStandardMaterial({
     emissiveIntensity: 50,
 });
 const venus = new Planet(
-    0.949,
+    5,//0.949
     0xffd9b3,
     270,
     225,
@@ -279,7 +279,7 @@ const earthTexture = new THREE.MeshStandardMaterial({
 });
 
 const earth = new Planet(
-    1,
+    6,//1,
     0x0000ff,
     320,
     365,
@@ -293,8 +293,8 @@ planets.push(earth);
 
 //moon
 const moon = new THREE.Mesh(
-    new THREE.SphereGeometry(0.15, 32, 32),
-    new THREE.MeshStandardMaterial({ color: 0x888888 })
+    new THREE.SphereGeometry(1, 32, 32),
+    mercuryTexture
 );
 earth.mesh.add(moon);
 scene.add(moon);
@@ -309,7 +309,7 @@ const marsTexture = new THREE.MeshStandardMaterial({
     emissiveIntensity: 10,
 });
 const mars = new Planet(
-    0.532,
+    3,//0.532,
     0xff0000,
     380,
     687,
@@ -320,6 +320,29 @@ const mars = new Planet(
     9
 );
 planets.push(mars);
+
+const asteroidRing = new Planet(
+    0.532,
+    0xff0000,
+    700,
+    3333,
+    null,
+    0,
+    10,
+    10,
+    9
+);
+planets.push(asteroidRing);
+
+function DrawAsteroidRing() {
+
+    const geometry = new THREE.TorusGeometry(10, 0.5, 32, 100);
+    const material = new THREE.MeshBasicMaterial({ color: 0x888888 });
+    const torus = new THREE.Mesh(geometry, material);
+    scene.add(torus);
+}
+
+
 
 //jupiter
 const jupiterTexture = new THREE.MeshStandardMaterial({
@@ -447,12 +470,18 @@ function loop() {
         planet.Rotation();
     });
 
-    moon.position.x = earth.mesh.position.x + 0.7 * Math.cos(Date.now() * 0.005);
-    moon.position.z = earth.mesh.position.z + 0.7 * Math.sin(Date.now() * 0.005);
+    moon.position.x = earth.mesh.position.x + 8 * Math.cos(Date.now() * 0.005);
+    moon.position.z = earth.mesh.position.z + 8 * Math.sin(Date.now() * 0.005);
+
+   camera.lookAt(moon.position);
+
+
 
     updateClock();
 
+    controls.update();
     renderer.render(scene, camera);
+    
 }
 
 loop();

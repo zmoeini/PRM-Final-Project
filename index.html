@@ -4,142 +4,247 @@
     <meta charset="UTF-8" />
     <title>SOLAR SYSTEM - Emmanuel Leon 2025-11-25</title>
     <style>
-      /* Fullscreen canvas with bright background - Emmanuel Leon 2025-11-17 */
       body {
         margin: 0;
         overflow: hidden;
-        background: radial-gradient(circle at center, #f0f7ff 0%, #cce3ff 100%); /*Adding background  2025-11-20*/
-        color: #111;
+        background: radial-gradient(circle at center, #f0f7ff 0%, #cce3ff 100%); /*Adding backgroun Emmanuel Leon 2025-11-25*/
+        color: #0d0d0d;
         font-family: sans-serif;
       }
-      /*This will show the info of the clicked planets the background has to have a light color Emmanuel Leon 2025-11-24*/
-      #info {   
+      /*Change the attributes of the label Click a planet Emmanuel Leon 2025-11-25*/
+      #info {                          
         position: absolute;
         top: 10px;
         left: 10px;
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(28, 94, 59, 0.8);
         padding: 10px 15px;
         border-radius: 10px;
         font-weight: bold;
-        color: #222;
-        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+        color: #b10404;
+        box-shadow: 0 0 10px rgba(21, 255, 0, 0.46);
       }
     </style>
-
-    <!-- Importing THREE.js and OrbitControls -->
+ 
     <script type="importmap">
       {
         "imports": {
           "three": "https://unpkg.com/three@0.168.0/build/three.module.js",
-          "OrbitControls": "https://unpkg.com/three@0.168.0/examples/jsm/controls/OrbitControls.js"
+          "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.168.0/examples/jsm/controls/OrbitControls.js"
         }
       }
     </script>
   </head>
 
   <body>
-    <div id="info">Click a planet</div>
+    <div id="info">Click a planet</div> <!--UI element pointing to the label Click a planet-->
 
     <script type="module">
       import * as THREE from 'three';
-      import { OrbitControls } from 'OrbitControls';
+      import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+        
 
-      // Scene setup
+      //Creating the scene 
       const scene = new THREE.Scene();
 
-      // Camera
-      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100); //changing to 60 FOV Emmanuel Leon 2025-11-24 modified
+      //Creating perspective camera
+      // FOV = 60 D, Aspect = viewport width/height , near clipping 0.1, far clipping = 100
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.set(0, 10, 25);
+      // We should be settling the camera above the plane and a little bit back to have the whole image of the system
 
-      // Renderer
+      // Creates the WebGL renderer , antialaias smooths edges 
       const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
+      // Set canvas size to browser window size 
+
+      // Fixing the shadows Emmanuel Leon 2025-10-12
       renderer.shadowMap.enabled = true;
-      document.body.appendChild(renderer.domElement);// appended to the DOM 
+      // Enable shadow map rendering without this, no shadows will be drawn Emmanuel Leon 2025-10-12
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      // Choose a soft shadow algorithm for smoother shadows
+      document.body.appendChild(renderer.domElement);
+      // add the renderer canvas element to the page so you can see the scene
 
-      // Controls
-      const controls = new OrbitControls(camera, renderer.domElement);
+       // Create orbit controls that let you rotate/zoom/pan the camera with the mouse Emmanuel Leon 2025-10-12
+      const controls = new OrbitControls(camera, renderer.domElement); 
 
-      // Lighting - Brighter overall ambient + sunlight creation of the lighting essential to see objects in screen Emmanuel Leon 2025-11-24 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      // ambient light 
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.18);
       scene.add(ambientLight);
 
-      const sunLight = new THREE.PointLight(0xffffff, 2, 150);
-      sunLight.castShadow = true;
-      scene.add(sunLight);
+      //  HIGH RES SHADOWS FOR BETTER VISIBILITY
+      const sunLight = new THREE.PointLight(0xffffff, 3.5, 300);
+     // PointLight simulates the Sun; color white, intensity 3.5, max distance 300 units
+      sunLight.castShadow = true; // enable shadows form this light
+      sunLight.shadow.mapSize.width = 2048; //Increase shadow map resolution for crisper shadows
+      sunLight.shadow.mapSize.height = 2048;
+      sunLight.shadow.bias = -0.001;//Small bias to reduce shadow acne (self shadow artifacts)
+      //the light still needs to be added to the scene or attached to an object (we attach it to the sun below) Emmanuel Leon 2025-10-12
+      // Fixed 1 castshadow and receiveshadow are now working this will simulate shadows in the planets Emmanuel leon 2025-12-12
+      
 
+      /* Adding ------------------- SUN -------------------- */
+      const sunMaterial = new THREE.MeshBasicMaterial({
+        color: 0xFFF26D,
+        emissive: 0xFFD700,
+        emissiveIntensity: 1.5
+      });
+      //MeshBasicMaterial is unaffected by light — perfect for the Sun because it should appear to glow.
 
-/*here we Add the 3 spheres sun, earth and Mars  */
-      // ---- SUN ----
-      const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xFFF26D, emissive: 0xFFD700, emissiveIntensity: 1.5 });
       const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
+      // Sphere geometry radius 2,32  width/height  segments (smooth  sphere)
       const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+      sun.castShadow = false; // Sun does NOT cast shadows 
+      sun.receiveShadow = false;// Sun doesnt have to receive shadows because is the object that's emiting the light 
       scene.add(sun);
+      sun.add(sunLight);
+      // Attach the point light to the sun mesh so the light moves with the sun (here the sun is stationary)
+       // Fixed 2 now the sunlight is attached to the sun 2025-12-12
 
-      // ---- EARTH ---- (Blue-Green)
+      /* Adding ------------------- MERCURY -------------has to receive the shadows is a receptor E Leon 25-11-12 ---- */
+      const mercuryMaterial = new THREE.MeshStandardMaterial({
+        color: 0xB8B8B8,
+        emissive: 0x444444,
+        emissiveIntensity: 0.05,
+        roughness: 0.8
+      });
+      //MeshStandardMaterial reacts to lights and supports shadows,we set low emissiveIntensity to keep shading visible
+
+      const mercury = new THREE.Mesh(
+        new THREE.SphereGeometry(0.4, 32, 32),
+        mercuryMaterial
+      );
+      mercury.position.x = 3; // initial position at radius 3 units form center on the x axis
+      mercury.castShadow = true; // this mesh will cast shadows onto other receiving objetcs
+      mercury.receiveShadow = true;// it has to receive shadows from the emisor the sun 
+      scene.add(mercury); 
+
+      /* Adding ------------------- VENUS --------------------E Leon 25-11-12 */
+      const venusMaterial = new THREE.MeshStandardMaterial({
+        color: 0xE6C27A,
+        emissive: 0xB8924C,
+        emissiveIntensity: 0.05,
+        roughness: 0.7
+      });
+
+      const venus = new THREE.Mesh(
+        new THREE.SphereGeometry(0.7, 32, 32),
+        venusMaterial
+      );
+      venus.position.x = 4.5;
+      venus.castShadow = true;
+      venus.receiveShadow = true;
+      scene.add(venus);
+
+      /* Adding ------------------- EARTH -------------------- */
       const earthMaterial = new THREE.MeshStandardMaterial({
         color: 0x1E90FF,
         emissive: 0x009999,
-        emissiveIntensity: 0.2,
+        emissiveIntensity: 0.05,
         roughness: 0.5,
         metalness: 0.1
       });
-      const earthGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-      const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+
+      const earth = new THREE.Mesh(
+        new THREE.SphereGeometry(0.8, 32, 32),
+        earthMaterial
+      );
       earth.position.x = 6;
+      earth.castShadow = true;
+      earth.receiveShadow = true;
       scene.add(earth);
 
-      // ---- MARS ---- (Bright orange-red)
+      /* Adding ------------------- MARS --------------------*/
       const marsMaterial = new THREE.MeshStandardMaterial({
         color: 0xFF7043,
         emissive: 0x993300,
-        emissiveIntensity: 0.2,
+        emissiveIntensity: 0.05,
         roughness: 0.6
-      }); 
-      const marsGeometry = new THREE.SphereGeometry(0.6, 32, 32);
-      const mars = new THREE.Mesh(marsGeometry, marsMaterial);
+      });
+
+      const mars = new THREE.Mesh(
+        new THREE.SphereGeometry(0.6, 32, 32),
+        marsMaterial
+      );
       mars.position.x = 10;
+      mars.castShadow = true;
+      mars.receiveShadow = true;
       scene.add(mars);
 
-      // --- Raycasting for Planet Selection adding raycasting for the interaction with the planets when the objects intersect Emmanuel Leon 2025-11-25---
-      const raycaster = new THREE.Raycaster();
-      const pointer = new THREE.Vector2();
-// logic of the interaction with the planets
+      /* Adding ------------------- ORBITS -------------------- */
+      const orbitMaterial = new THREE.LineBasicMaterial({ color: 0xcccccc });
+      // Simple thin gray line for orbit paths
+      
+
+      
+      // addOrbit builds a circular line using many small segments
+      function addOrbit(radius) {
+        const points = [];
+        for (let i = 0; i <= 64; i++) {
+          const angle = (i / 64) * Math.PI * 2;
+          points.push(new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        scene.add(new THREE.LineLoop(geometry, orbitMaterial));
+      }
+
+      addOrbit(3); // Mercury orbit 
+      addOrbit(4.5); //Venus orbit 
+      addOrbit(6); //Earth orbit 
+      addOrbit(10); //Mars orbit
+
+      /* ------------------- RAYCAST -------------------- */
+      const raycaster = new THREE.Raycaster();// this ray will detect mouse clicks in the 3D objects Emmanuel leon 2025-12-12
+      const pointer = new THREE.Vector2();// selector that coordinates the mouse pointer in the screen
+      const planets = [sun, mercury, venus, earth, mars];  // list of clickable planets
+        
+
+
       window.addEventListener('click', (event) => {
-        pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-        pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        // Convert screen coordinates to normalized device coordinates (NDC) [-1,+1]
+        pointer.x = (event.clientX / window.innerWidth) * 2 - 1; // cast a ray from the camera through the pointer position
+        pointer.y = -(event.clientY / window.innerHeight) * 2 + 1; // returns intersected objects sorted by distance
+
         raycaster.setFromCamera(pointer, camera);
-        const hits = raycaster.intersectObjects([sun, earth, mars]);
+        const hits = raycaster.intersectObjects(planets);
+
         if (hits.length > 0) {
-          const hit = hits[0].object;
-          const name = hit === sun ? 'Sun' : hit === earth ? 'Earth' : 'Mars';
-          document.getElementById('info').innerText = `You Clicked: ${name}`;
+          const hit = hits[0].object; // nearest intersected object
+          const name =
+            hit === sun ? 'Sun' :
+            hit === mercury ? 'Mercury' :
+            hit === venus ? 'Venus' :
+            hit === earth ? 'Earth' :
+            'Mars';
+          document.getElementById('info').innerText = `You Clicked: ${name}`; // Show the lcicked planet 
         }
       });
 
-      // --- Animation ---
+      /* ------------------- ANIMATION -------------------- */
+      const clock = new THREE.Clock(); // Fixed 3 provides elapsed time with consistent pausing and resetting Emmanuel L 2025-12-12
+
       function animate() {
-        requestAnimationFrame(animate);
-        const t = Date.now() * 0.001;
+        requestAnimationFrame(animate); // ask browser to call animate again for next frame
+        const t = clock.getElapsedTime(); // time in seconds since clock started
 
-        earth.position.x = 6 * Math.cos(t * 0.5);
-        earth.position.z = 6 * Math.sin(t * 0.5);
 
-        mars.position.x = 10 * Math.cos(t * 0.3);
-        mars.position.z = 10 * Math.sin(t * 0.3);
+        // updates each planet's x and z so they cirle around the sun 
+        mercury.position.set(3 * Math.cos(t * 1.2), 0, 3 * Math.sin(t * 1.2));
+        venus.position.set(4.5 * Math.cos(t * 0.9), 0, 4.5 * Math.sin(t * 0.9));
+        earth.position.set(6 * Math.cos(t * 0.5), 0, 6 * Math.sin(t * 0.5));
+        mars.position.set(10 * Math.cos(t * 0.3), 0, 10 * Math.sin(t * 0.3));
 
-        sun.rotation.y += 0.002;
+        sun.rotation.y += 0.002; // slowly rotate the Sun mesh for subtle motion  Emmanuel Leon 25-12-12
 
-        controls.update();
-        renderer.render(scene, camera);
+        controls.update();// required by orbitControls for damping, if used (safe to call)
+        renderer.render(scene, camera); // draw the current scene  from the camera
       }
-      animate();
+      animate(); // Function that render the loop
 
-      // --- Resize Handling ---
       window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = window.innerWidth / window.innerHeight;// update camera aspect when window resizes  
         camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(window.innerWidth, window.innerHeight);// resize render to fill window
       });
     </script>
   </body>

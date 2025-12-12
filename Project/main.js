@@ -3,6 +3,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 import { RGBELoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/RGBELoader.js'; //https://www.youtube.com/watch?v=zVDnKVG-9mk
 
+//Lerning Ellipses:
+//https://www.youtube.com/watch?v=OPSCKXXvWiM
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000000);
 

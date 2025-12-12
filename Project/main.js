@@ -149,7 +149,9 @@ class Planet {
     }
 
     DrawEllipse(segments = 100) {
+        
         const points = [];
+
         for (let i = 0; i <= segments; i++) {
 
             let angle = 360 / segments;
@@ -321,6 +323,7 @@ const mars = new Planet(
 );
 planets.push(mars);
 
+/*
 const asteroidRing = new Planet(
     0.532,
     0xff0000,
@@ -342,7 +345,7 @@ function DrawAsteroidRing() {
     scene.add(torus);
 }
 
-
+*/
 
 //jupiter
 const jupiterTexture = new THREE.MeshStandardMaterial({

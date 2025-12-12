@@ -17,7 +17,9 @@
  
     // --- minimal state ---
     let time = 30, score = 0, running = true;
- 
+    
+    let activeCount = 0; //tracking number of active moles
+
     // --- three setup ---
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0b0d12);
@@ -53,16 +55,40 @@
       constructor(position)
       {
         this.hiddenPosY = -0.8;
-        this.mole = new THREE.Mesh(new THREE.SphereGeometry(.55,16,14), new THREE.MeshStandardMaterial({color:0xf97316}));
+        this.mole = new THREE.Mesh
+        (
+          new THREE.SphereGeometry(.55,16,14), 
+          new THREE.MeshStandardMaterial({color:0xf97316})
+        );
         this.mole.position.set(position.x, this.hiddenPosY, position.z); // hidden (below ground)
+        this.mole.userData.mole = this; //here i am linking the mole instance to the mesh for easy access later
         scene.add(this.mole);
-        this.t = 0; // initializing the anim frame to be at 0 aka hidden
+
+        //storing the original color of the mole mesh so we can use it to reset later
+        this.originalColor = this.mole.material.color.clone();
+        this.flashTimer = null; //timer for flash effect
+        this.hideTimer = null; //timer for hiding the mole after being hit
+        this.t = 1; // initializing the anim frame to be at 1 aka hidden
+      }
+
+      StartMoleAnim()
+      {
+        if (this.active) return; //if mole is already active, do nothing
+        this.t = 0; //start the anim frame at 0 to make mole rise
+        this.active = true; //mark mole as active
+        activeCount++; //incrementing the global active mole count
       }
 
       ResetPosition() //giving mole a method to reset its position (so it the code is cleaner in the loop)
       {
         this.mole.position.y = this.hiddenPosY;
-        this.t = 0;
+        this.t = 1; //resetting the anim frame to be at 1 aka hidden
+        if (this.active)
+        {
+          this.active = false; //mark mole as inactive
+          activeCount--; //decrementing the global active mole count
+        }
+        
       }
 
       UpdateMoles(dt) //method to update the mole position based on time
@@ -77,45 +103,112 @@
           this.ResetPosition();
         } 
       }
+
+      MoleIsVisible() //method to check if mole is visible
+      {
+        if (!this.active) return false; //if mole is not active, it's not visible
+        const mid = (this.hiddenPosY + 0.9) / 2; // here = 0.05
+        return this.mole.position.y > mid;
+      }
+
+      FlashMoleHit(hexColor, duration) //method to flash the mole when hit
+      {
+        this.mole.material.color.setHex(hexColor);
+        if (this.flashTimer) clearTimeout(this.flashTimer);
+        
+        this.flashTimer = setTimeout(() => 
+        {this.mole.material.color.copy(this.originalColor);}, duration);
+      }
+      
+      hideLater(delay = 100) //method to hide mole after a delay  
+      {
+        if (this.hideTimer) clearTimeout(this.hideTimer);
+        this.hideTimer = setTimeout(() => 
+        {
+          this.ResetPosition();
+          this.hideTimer = null;
+        }, delay);
+      }
     }
     const moles = holePositions.map(pos => new Mole(pos));
 
+    //creating the hole rings geo and mat to be used for all holes
+    const ringGeo = new THREE.TorusGeometry(.7, .12, 12, 32);
+    const ringMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+    //new logic to spawn rings aka toruses at each hole position now that we have multiple hole
+    const rings = holePositions.map
+    (
+      pos => 
+      {
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.set(pos.x, 0.02, pos.z);
+        scene.add(ring);
+        return ring;
+      }
+    );
     // hole ring
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(.7,.12,12,32), new THREE.MeshStandardMaterial({color:0x334155}));
-    ring.rotation.x=-Math.PI/2; ring.position.y=0.02; scene.add(ring);
+    //const ring = new THREE.Mesh(new THREE.TorusGeometry(.7,.12,12,32), new THREE.MeshStandardMaterial({color:0x334155}));
+    //ring.rotation.x=-Math.PI/2; ring.position.y=0.02; scene.add(ring);
  
+    
+
     // mole sphere
     // const mole = new THREE.Mesh(new THREE.SphereGeometry(.55,16,14), new THREE.MeshStandardMaterial({color:0xf97316}));
     // mole.position.y = -0.8; // hidden (below ground)
     // scene.add(mole);
  
     // spawn every ~1s, speeds up slightly
-    let spawnMs = 900, sinceSpawn = 0;
+    let spawnMs = 1100, sinceSpawn = 0;
     // function spawn(){ mole.position.y = -0.8; mole.userData.t = 0; }
     // spawn();
  
     // click = raycast
     const ray = new THREE.Raycaster(); const pt = new THREE.Vector2();
-    function onPointer(e){
+
+    //the pointer function that handles the raycasting and mole hit detection
+    function onPointer(e)
+    {
        if(!running) return;
         pt.x=(e.clientX/innerWidth)*2-1;
         pt.y=-(e.clientY/innerHeight)*2+1;
         ray.setFromCamera(pt,camera);
-      const hit = ray.intersectObject(mole,false)[0];
+        
+      //creating an array of mole meshes for raycasting
+      const moleMeshes = moles.map(m=>m.mole); 
+
+      //const hit = ray.intersectObject(mole,false)[0]; --> was how it was before when we only had one mole
+      const hit = ray.intersectObjects(moleMeshes,false)[0]; //updated to detect multiple moles
+      
       if(hit)
-      { score++; mole.position.y=-0.8; updateUI(); }
+      { 
+        const hitMole = hit.object.userData.mole; //the mole that was hit
+        if (hitMole && hitMole.MoleIsVisible()) //indexOf returns -1 if not found
+        {
+          hitMole.FlashMoleHit(0xffff66, 100); //flash yellow for 100ms
+          hitMole.hideLater(100); //hide mole after 100ms
+          score++;
+          updateUI();
+          // const hitMole = moles[index]; //getting the corresponding Mole instance
+          // score++;
+          // hitMole.ResetPosition(); //resetting the position of the hit mole
+          
+        }
+         
+      }
     }
     addEventListener('pointerdown', onPointer, {passive:true});
- 
+
     // ui
     const tEl = document.getElementById('t'), sEl = document.getElementById('s');
     function updateUI(){ tEl.textContent=time.toFixed(1); sEl.textContent=score; }
  
     // loop
     let last = performance.now(); updateUI();
-    function loop(now){
+    function loop(now)
+    {
       requestAnimationFrame(loop);
-       const dt=Math.min((now-last)/1000, .05); last=now;
+      const dt=Math.min((now-last)/1000, .05); last=now;
       if(running && time>0)
       {
         time=Math.max(0,time-dt);
@@ -125,8 +218,25 @@
         if(sinceSpawn>=spawnMs)
         { 
           sinceSpawn=0;
-          const randomMole = moles[Math.floor(Math.random() * moles.length)]; //selecting a random mole from the array
-          randomMole.ResetPosition();
+          //const activeCount = moles.filter(m => m.active).length; //getting the count of active moles
+          const maxActiveMoles = 3; //setting a max limit for active moles so the game is playable (otherwise its impossible to actually hit each mole when it pops up)
+          if (activeCount < maxActiveMoles) 
+          {
+            //selecting a random mole that is not active
+            const inactiveMoles = moles.filter(m => !m.active);
+            if (inactiveMoles.length > 0)
+            {
+              const randomMole = inactiveMoles[Math.floor(Math.random() * inactiveMoles.length)];
+              //add a small random delay between 0-300ms before starting the anim to avoid the moles being too perfectly in sync
+              //const delay = Math.random() * 300;
+              randomMole.StartMoleAnim();
+            }
+            
+          }
+
+          //const randomMole = moles[Math.floor(Math.random() * moles.length)]; //selecting a random mole from the array
+          //randomMole.ResetPosition();
+
           //mole.position.y=-0.8; 
           //mole.userData.t=0; 
         }

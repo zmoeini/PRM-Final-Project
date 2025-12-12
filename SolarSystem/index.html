@@ -43,6 +43,20 @@
         const grid = new THREE.GridHelper(50, 50);
         grid.material.color.setHex(0x333333);
         scene.add(grid);
+
+        // Starfield
+        const starGeometry = new THREE.BufferGeometry();
+        const starMaterial = new THREE.PointsMaterial({ color: 0xffffff });
+        const starVertices = [];
+        for (let i = 0; i < 10000; i++) {
+            const x = (Math.random() - 0.5) * 2000;
+            const y = (Math.random() - 0.5) * 2000;
+            const z = (Math.random() - 0.5) * 2000;
+            starVertices.push(x, y, z);
+        }
+        starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
         
 
         const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000);
@@ -115,6 +129,37 @@
         const jupiter = createPlanet(1.0, 0xffa500);
         jupiterGroup.add(jupiter);
 
+        // Saturn
+        const saturnGroup = new THREE.Group();
+        scene.add(saturnGroup);
+        const saturn = createPlanet(0.8, 0xffaa00);
+        saturnGroup.add(saturn);
+        // Saturn rings
+        const saturnRings = new THREE.Mesh(
+            new THREE.RingGeometry(1.2, 1.5, 64),
+            new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
+        );
+        saturnRings.rotation.x = -Math.PI / 2;
+        saturnGroup.add(saturnRings);
+
+        // Uranus
+        const uranusGroup = new THREE.Group();
+        scene.add(uranusGroup);
+        const uranus = createPlanet(0.6, 0x4fd0e7);
+        uranusGroup.add(uranus);
+
+        // Neptune
+        const neptuneGroup = new THREE.Group();
+        scene.add(neptuneGroup);
+        const neptune = createPlanet(0.6, 0x4169e1);
+        neptuneGroup.add(neptune);
+
+        // Pluto
+        const plutoGroup = new THREE.Group();
+        scene.add(plutoGroup);
+        const pluto = createPlanet(0.2, 0x8c7853);
+        plutoGroup.add(pluto);
+
         // Helper to create orbit rings
         function createRing(distance) {
             const ring = new THREE.Mesh(
@@ -141,6 +186,18 @@
         const jupiterRing = createRing(10);
         scene.add(jupiterRing);
 
+        const saturnRing = createRing(13);
+        scene.add(saturnRing);
+
+        const uranusRing = createRing(16);
+        scene.add(uranusRing);
+
+        const neptuneRing = createRing(19);
+        scene.add(neptuneRing);
+
+        const plutoRing = createRing(22);
+        scene.add(plutoRing);
+
         // Click detection
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
@@ -148,10 +205,10 @@
             pointer.x = (event.clientX / innerWidth) * 2 - 1;
             pointer.y = -(event.clientY / innerHeight) * 2 + 1;
             raycaster.setFromCamera(pointer, camera);
-            const hits = raycaster.intersectObjects([sun, mercury, venus, earth, moon, mars, jupiter]);
+            const hits = raycaster.intersectObjects([sun, mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, pluto]);
             if (!hits.length) return;
             const hit = hits[0].object;
-            let name = hit === sun ? 'Sun' : hit === mercury ? 'Mercury' : hit === venus ? 'Venus' : hit === earth ? 'Earth' : hit === moon ? 'Moon' : hit === mars ? 'Mars' : hit === jupiter ? 'Jupiter' : 'Unknown';
+            let name = hit === sun ? 'Sun' : hit === mercury ? 'Mercury' : hit === venus ? 'Venus' : hit === earth ? 'Earth' : hit === moon ? 'Moon' : hit === mars ? 'Mars' : hit === jupiter ? 'Jupiter' : hit === saturn ? 'Saturn' : hit === uranus ? 'Uranus' : hit === neptune ? 'Neptune' : hit === pluto ? 'Pluto' : 'Unknown';
             document.getElementById('info').innerText = "Clicked: " + name;
         });
 
@@ -185,6 +242,18 @@
 
             jupiterGroup.position.x = 10 * Math.cos(t * 0.5);
             jupiterGroup.position.z = 10 * Math.sin(t * 0.5);
+
+            saturnGroup.position.x = 13 * Math.cos(t * 0.4);
+            saturnGroup.position.z = 13 * Math.sin(t * 0.4);
+
+            uranusGroup.position.x = 16 * Math.cos(t * 0.3);
+            uranusGroup.position.z = 16 * Math.sin(t * 0.3);
+
+            neptuneGroup.position.x = 19 * Math.cos(t * 0.2);
+            neptuneGroup.position.z = 19 * Math.sin(t * 0.2);
+
+            plutoGroup.position.x = 22 * Math.cos(t * 0.15);
+            plutoGroup.position.z = 22 * Math.sin(t * 0.15);
 
             controls.update();
             renderer.render(scene, camera);

@@ -198,8 +198,8 @@
         }
 
 
-    let popUpTime = 1500;
-    //we plan to popup the mole about every 900milisecs (1sec)
+    let popUpTime = 2500;
+    //we plan to popup the mole about every 2500milisecs (2.5sec)
     let sincePopUp = 0;
     //tracks how long from last popup
 
@@ -370,7 +370,7 @@
         //2-getting and updating the mole anim state
 
         const userData = selectedMole.userData; //get data from selected mole
-        userData.t = (userData.t||0) + dt * 1.8; //time since popup in seconds
+        userData.t = (userData.t||0) + dt * 1.4; //time since popup in seconds
 
 
         //3-determine whether the mole si going up or down
